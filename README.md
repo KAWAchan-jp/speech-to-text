@@ -1,146 +1,116 @@
-# 音声認識で自動字幕を表示するWebページ
+# 音声認識リアルタイム字幕 Webページ
 
-Web Speech API の音声認識を利用して文字起こしした結果をブラウザ上でリアルタイム表示するWebページです。ビデオ会議や生配信等で使用できます。
+Web Speech API を使用した音声認識の結果をブラウザ上にリアルタイム表示するWebページです。  
+ビデオ会議・生配信・プレゼンなど様々な場面で字幕として活用できます。
 
 # デモページ
 https://kawachan-jp.github.io/speech-to-text/  
-*PC版のGoogle ChromeやMicrosoft Edgeのような音声認識をサポートするブラウザでアクセスしてください。Safariは2022年10月現在、挙動が不安定なので非推奨です。
+*PC版のGoogle ChromeまたはMicrosoft Edgeでアクセスしてください。*
 
-**目次**
-- [動作環境](#動作環境)
-- [何ができるか](#何ができるか)
-- [よくある質問](#よくある質問)
-  - [使用環境関係](#使用環境関係)
-  - [機能について](#機能について)
-  - [その他](#その他)
-- [関連資料](#関連資料)
-- [参考資料](#参考資料)
+---
 
+# 機能一覧
 
-# 動作環境
-かなりざっくりとした動作環境しか行っていません。  
-同様の環境で動かない場合はブラウザのアップデートや別ブラウザでの利用等をお試しください。
+## 音声認識
+- Web Speech API によるリアルタイム音声認識
+- 多言語対応（日本語・英語・中国語・韓国語など多数）
+- 認識が途切れた場合は自動で再開
+- 日本語認識時、文末に「。」を自動付与
+- Enterキーで手動で文を区切る
 
-- PC版 Google Chrome
-  - Windows, macOS, Linux (Ubuntu Mate 20.04) などで確認済み
-  - 日本語の場合，イントネーションに関わらず「。」が付与されます。これは，Web SpeechAPI の機能ではなく，本ページの機能です。
-- PC版 Microsoft Edge
-  - Windows, macOSで動作することを確認（Linuxは2022年10月現在クラッシュする模様）
-  - 日本語の場合，音声認識が識別し「、」「。」「？」などの付与が行われます。これは，本ページの機能ではなく，Web Speech API の機能です。
-  - 筆者の検証環境では，Google Chrome よりも Edge は認識頻度や速度が遅く見えました。環境や用途によって，Chrome と Edge どちらが適切かが異なると思われるので，使われる方の環境で双方お試しいただくことをおすすめします。
-- macOS版 Safari
-  - 一応動作はするものの、同じ文言が二重で出たり認識が止まるなど、挙動が不安定
-- Android版 Google Chrome
-  - 2022年10月現在、音声認識が適切に動作しない模様（Android 13; Pixel 6 Pro にて検証）
+## 翻訳
+- Google Translate による英語翻訳（ページ読み込み時に自動で英語翻訳をオン）
 
-# 何ができるか
-- 音声からリアルタイムで文字起こしを行い，ブラウザ上で表示する
-  - 認識する言語の変更
-  - 表示する文章の翻訳（ログは翻訳されない）
-  - 表示する文章のひらがな化（日本語認識→日本語表示の場合のみ，ログはひらがな化されない）
-- 認識した過去ログの表示とダウンロード
-- 表示する文字のスタイルの調整
-  - 調整した設定はブラウザに自動保存
+## ひらがな変換
+- 日本語認識時のみ表示されるオプション
+- kuromoji.js による形態素解析でひらがな表示
 
-# よくある質問
-## 音声データ・文字起こしデータの扱いについて
-- 開発者のサーバー（kawachan-jp.github.io）では，サーバー上への音声および文字データの保存は行っておりません。  
-  - 「ログをダウンロード」でダウンロードされるファイルは，アクセスしているユーザーのブラウザで生成されています。  
-- 音声文字変換には Web Speech API を利用しており，音声データおよびその文字起こしデータが実際どのように処理されるかは，ユーザーが利用するブラウザによって異なります。  
-参考: Web Speech APIを使う - Web API | MDN https://developer.mozilla.org/ja/docs/Web/API/Web_Speech_API/Using_the_Web_Speech_API
-- 音声データおよびその文字起こしデータの各ブラウザの扱いについては，当該ブラウザやブラウザ開発者のプライバシーポリシーなどを参照してください。 
-  - 参考: Google Chrome Privacy Whitepaper https://www.google.com/chrome/privacy/whitepaper.html
-  - 参考: Microsoft Edge プライバシー ホワイトペーパー https://learn.microsoft.com/ja-jp/microsoft-edge/privacy-whitepaper/#speech-recognition
-- 開発者は，本プログラム [speech-to-text](https://github.com/KAWAchan-jp/speech-to-text) および それを Github Pages でホスティングした [Speech-to-Text Webcam Overlay](https://kawachan-jp.github.io/speech-to-text/) を使用したことにより生じた損害等の一切の責任を負いかねますのでご了承ください。
+## 表示スタイルの調整
+- フォントサイズ・透明度・行間・字間
+- 文字色・影（サイズ・色）・フチ（サイズ・色）
+- フォント選択（Noto Sans JP / BIZ UDPゴシック / BIZ UDP明朝 / 游ゴシック / メイリオ など）
+- 文字位置（全体・左・右・上・下）
+- 文字の表示/非表示・左右反転
 
-## 使用環境関係
-### Google Chrome って何？どうやって使うの？
-- Google Chrome は Google が提供しているウェブブラウザ（ウェブページを表示するためのソフトウェア）です。
-- 下記ページからダウンロード・インストールすることで利用できます。  
-Google Chrome ダウンロードページ: https://www.google.com/chrome/
+## 文字背景
+- 背景の塗り（濃さ・色）
+- 単色背景（表示/非表示・色指定）※クロマキー合成用途に活用可
 
-### iPhoneやiPadのChromeで使えない
-- iOS (iPhoneやiPad)のChromeは，中身がSafariのWebKitで実装されているため，音声認識に利用している Web Speech API が現段階では利用できません。PC版のChromeでアクセスしてください。  
-参考: https://news.mynavi.jp/article/20190331-iphone_why/
-- iOSで文字起こしを検討したい場合は，iOSの音声入力をメモアプリで使用するなどの方法が考えられます。  
-参考: https://time-space.kddi.com/mobile/20190110/2532
+## フルスクリーン
+- フルスクリーンボタンのワンクリックで全画面表示
+- フルスクリーン時に文字サイズを画面比率に合わせて自動調整
 
-### マイクが認識されない
-- ページを再読み込みするか，ブラウザの設定を確認してください。  
-参考: https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=ja&oco=1
-
-## 機能について
-### 相手側の音声を表示したい
-- 機能として実装はしていませんが，例えば次のような方法があります。
-  - マイクに相手側の声が物理的に入るようにする（ハウリング注意）
-  - PC内部で直接相手の音をブラウザに流し込む  
-    参考: https://www.cg-method.com/entry/google-document-convert-voice-to-text/  
-    参考: https://ghosthack.net/?p=5680
-
-### 文字の修正をしたい
-- 認識結果のログでは修正可能になっています。合成画面上での編集については未実装です。
-- Google Docsなどの音声入力やUDトークなど，他のツールの利用で要望を満たせるかもしれません。  
-参考: Google Docs ヘルプ / 音声で入力する https://support.google.com/docs/answer/4492226?hl=ja
-
-### ひらがなで表示したい
-- 実装しました。
-- 「音声認識：Japanese」を選択すると，「ひらがな」のチェックボックスが表示されます。
-  - チェックボックスにチェックを入れると，ひらがな変換用のデータが読み込まれます。
-- 仕組みと注意
-  - Web Speech API では，漢字や変換された状態で結果が出力されます。
-  - その結果から [kuromoji.js](#kuromojijs) により読みを取得し，表示しています。
-  - 音声から直接ひらがなを生成しているわけではないため，読みが正しく表示されなかったり，kuromoji.js の辞書に登録されていない単語や英単語等が変換前の状態で表示されたりします。
-  - つまり，「日本語音声→ひらがな」の変換ではなく，「日本語音声→文字→ひらがな読み」が行われています。
-
-### 文字認識の結果を保存したい
-- 実装しました。
-- 保存を自動的に行いたい場合は，Google Docsなどの音声入力やUDトークなど，他のツールの利用を検討してください。  
-参考: Google Docs ヘルプ / 音声で入力する https://support.google.com/docs/answer/4492226?hl=ja  
-
-### 自動で翻訳したい
-- 実装しました。
-- 操作パネルの「翻訳：Select Language」と書かれているところから，翻訳したい言語を選択してください。
-- なお，認識ログには音声認識した言語（翻訳前の言語）が表示されます。
-
-### 他の言語を認識したい
-- 実装しました。
-- 操作パネルの「音声認識：Japanese」と書かれているところから，他の言語を選択してください。
-
-### フォントが表示されない
-- 選択が可能になっているフォントのなかで，PCによってはインストールされていない場合があります。
-- フォントをインストールするか，別のフォントを選択してください。
+## 認識ログ
+- 確定した認識結果のログ表示
+- タイムスタンプ記録オプション
+- テキストの編集・コピー
+- ログのテキストファイルダウンロード
 
 ## その他
-### ブログや生配信で紹介したい
-- オープンに公開しているので，自由に使ってください！
+- 設定はブラウザの localStorage に自動保存・復元
+- PWA対応（Service Worker によるオフライン動作）
 
-# 外部のライブラリ（サブモジュール）について
-サブモジュールとして追加しているレポジトリをまとめてcloneする場合は`--recursive` オプションを使用してcloneしてください。
+---
+
+# 動作環境
+
+- **PC版 Google Chrome**（推奨）
+  - Windows / macOS / Linux で動作確認済み
+- **PC版 Microsoft Edge**
+  - Windows / macOS で動作確認済み
+- **macOS版 Safari**
+  - 動作するものの挙動が不安定なため非推奨
+- **Android版 Google Chrome**
+  - 音声認識が適切に動作しない場合あり
+- **iPhone / iPad**
+  - iOS の Chrome・Safari は Web Speech API 非対応のため使用不可
+
+---
+
+# よくある質問
+
+## 音声データ・文字起こしデータの扱いについて
+- 開発者のサーバー（kawachan-jp.github.io）では、音声および文字データの保存は行っておりません。
+- 「ログをダウンロード」でダウンロードされるファイルは、アクセスしているユーザーのブラウザで生成されています。
+- 音声文字変換には Web Speech API を利用しており、音声データの処理方法はユーザーが利用するブラウザに依存します。
+  - 参考: [Web Speech APIを使う - MDN](https://developer.mozilla.org/ja/docs/Web/API/Web_Speech_API/Using_the_Web_Speech_API)
+  - 参考: [Google Chrome Privacy Whitepaper](https://www.google.com/chrome/privacy/whitepaper.html)
+  - 参考: [Microsoft Edge プライバシー ホワイトペーパー](https://learn.microsoft.com/ja-jp/microsoft-edge/privacy-whitepaper/#speech-recognition)
+- 開発者は、本プログラムおよびそのホスティングページを使用したことにより生じた損害等の一切の責任を負いかねます。
+
+## マイクが認識されない
+- ページを再読み込みするか、ブラウザの設定を確認してください。  
+  参考: https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=ja&oco=1
+
+## 相手側の音声を表示したい
+- マイクに相手の声が物理的に入るようにするか、PC内部で音声をブラウザに流し込む方法があります。
+
+## 文字の修正をしたい
+- 認識結果のログ欄では直接テキストの編集が可能です。
+- リアルタイム表示中の編集は非対応です。
+
+---
+
+# 外部ライブラリ
+
 ## kuromoji.js
 - https://github.com/takuyaa/kuromoji.js
-- 形態素解析を行うライブラリ
-- 「読み」をひらがな化する際に利用
+- 形態素解析ライブラリ（ひらがな変換に使用）
 - License: Apache License 2.0
 
-# 関連資料
-- リモートミーティングでの音声認識の活用事例  
-https://github.com/DigitalNatureGroup/Remote_Voice_Recognition
+---
 
 # 参考資料
-コードを書くにあたって参考にしたWebページ等
-- Web Speech API Demonstration  
-https://www.google.com/intl/ja/chrome/demos/speech.html
-- Web Speech APIで途切れない音声認識  
-https://jellyware.jp/kurage/iot/webspeechapi.html
-- 使用してるブラウザを判定したい  
-https://qiita.com/sakuraya/items/33f93e19438d0694a91d
-- [HTML5] フルスクリーンの開始と解除  
-https://blog.katsubemakito.net/html5/fullscreen
-- テキストエリア(textarea)の高さを自動にする  
-https://webparts.cman.jp/input/textarea/
-- JavaScript でファイル保存・開くダイアログを出して読み書きするまとめ  
-https://qiita.com/kerupani129/items/99fd7a768538fcd33420
-- JavaScriptからGoogle翻訳を使えるAPI試してみた【コード例付き】  
-https://pisuke-code.com/js-usage-of-google-trans-api/
-- しりとり審判アプリを作った話  
-https://medium.com/@Mitu217/しりとり審判アプリを作った話-294b4947b008
+- [Web Speech API Demonstration](https://www.google.com/intl/ja/chrome/demos/speech.html)
+- [Web Speech APIで途切れない音声認識](https://jellyware.jp/kurage/iot/webspeechapi.html)
+- [使用しているブラウザを判定したい](https://qiita.com/sakuraya/items/33f93e19438d0694a91d)
+- [HTML5 フルスクリーンの開始と解除](https://blog.katsubemakito.net/html5/fullscreen)
+- [テキストエリアの高さを自動にする](https://webparts.cman.jp/input/textarea/)
+- [JavaScriptでファイル保存・開くダイアログを出して読み書き](https://qiita.com/kerupani129/99fd7a768538fcd33420)
+- [JavaScriptからGoogle翻訳を使えるAPI](https://pisuke-code.com/js-usage-of-google-trans-api/)
+
+---
+
+# 謝辞
+
+本プログラムは [1heisuzuki/speech-to-text-webcam-overlay](https://github.com/1heisuzuki/speech-to-text-webcam-overlay) をベースに、カメラ機能の削除・翻訳の英語固定・デフォルト英語翻訳の自動選択などの変更を加えたものです。
