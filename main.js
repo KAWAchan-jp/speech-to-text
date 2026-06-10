@@ -560,6 +560,15 @@ function googleTranslateElementInit() {
     includedLanguages: 'en',
     layout: google.translate.TranslateElement.InlineLayout.SIMPLE
   }, 'google_translate_element');
+
+  // デフォルトで英語翻訳を自動選択
+  setTimeout(function() {
+    var select = document.querySelector('.goog-te-combo');
+    if (select) {
+      select.value = 'en';
+      select.dispatchEvent(new Event('change'));
+    }
+  }, 1000);
 }
 
 // フォント切替
