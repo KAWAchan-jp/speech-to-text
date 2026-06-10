@@ -1,7 +1,6 @@
-# Webカメラの映像に自動字幕を重ねるWebページ
-<img src="./sample.gif" alt="動作風景「このページを開くだけで音声認識をした結果の字幕をこんな感じで…」">
+# 音声認識で自動字幕を表示するWebページ
 
-Web Speech API の音声認識を利用して文字起こしした結果をWebカメラ映像に重畳して表示するWebページです。ブラウザを画面収録して，ビデオ会議や生配信等で使用できます。
+Web Speech API の音声認識を利用して文字起こしした結果をブラウザ上でリアルタイム表示するWebページです。ビデオ会議や生配信等で使用できます。
 
 # デモページ
 https://kawachan-jp.github.io/speech-to-text/  
@@ -35,7 +34,7 @@ https://kawachan-jp.github.io/speech-to-text/
   - 2022年10月現在、音声認識が適切に動作しない模様（Android 13; Pixel 6 Pro にて検証）
 
 # 何ができるか
-- 音声からリアルタイムで文字起こしを行い，Webカメラの映像に重ねてブラウザ上で表示する
+- 音声からリアルタイムで文字起こしを行い，ブラウザ上で表示する
   - 認識する言語の変更
   - 表示する文章の翻訳（ログは翻訳されない）
   - 表示する文章のひらがな化（日本語認識→日本語表示の場合のみ，ログはひらがな化されない）
@@ -66,7 +65,7 @@ Google Chrome ダウンロードページ: https://www.google.com/chrome/
 - iOSで文字起こしを検討したい場合は，iOSの音声入力をメモアプリで使用するなどの方法が考えられます。  
 参考: https://time-space.kddi.com/mobile/20190110/2532
 
-### カメラやマイクが認識されない
+### マイクが認識されない
 - ページを再読み込みするか，ブラウザの設定を確認してください。  
 参考: https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=ja&oco=1
 
@@ -133,8 +132,6 @@ https://github.com/DigitalNatureGroup/Remote_Voice_Recognition
 https://www.google.com/intl/ja/chrome/demos/speech.html
 - Web Speech APIで途切れない音声認識  
 https://jellyware.jp/kurage/iot/webspeechapi.html
-- HTML5のWebRTCでPCに接続されたカメラ映像をウェブブラウザー上に表示してコマ画像を保存したい  
-https://qiita.com/qiita_mona/items/e58943cf74c40678050a
 - 使用してるブラウザを判定したい  
 https://qiita.com/sakuraya/items/33f93e19438d0694a91d
 - [HTML5] フルスクリーンの開始と解除  
