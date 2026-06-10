@@ -148,7 +148,7 @@ a:active {
 	text-shadow: 0 0 5px #000;
 	margin-top: 0.4em;
 	padding-top: 0.3em;
-	border-top: 1px solid rgba(255, 255, 255, 0.3);
+	border-top: 2px solid rgba(255, 255, 255, 0.8);
 	word-wrap: break-word;
 }
 
