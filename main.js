@@ -557,6 +557,7 @@ function updateLanguage() {
 // 参考: https://pisuke-code.com/js-usage-of-google-trans-api/
 function googleTranslateElementInit() {
   new google.translate.TranslateElement({
+    includedLanguages: 'en',
     layout: google.translate.TranslateElement.InlineLayout.SIMPLE
   }, 'google_translate_element');
 }
