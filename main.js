@@ -183,13 +183,14 @@ function vr_function() {
       }
     }
 
+    var displayText;
     if (document.getElementById('checkbox_hiragana').checked && lang == 'ja-JP') {
-      document.getElementById('result_text').innerHTML 
-        = [resultToHiragana(last_finished), resultToHiragana(current_transcripts)].join('<br>');
+      displayText = [resultToHiragana(last_finished), resultToHiragana(current_transcripts)].join('<br>');
     } else {
-      document.getElementById('result_text').innerHTML 
-        = [last_finished, current_transcripts].join('<br>');
+      displayText = [last_finished, current_transcripts].join('<br>');
     }
+    document.getElementById('result_text').innerHTML = displayText;
+    document.getElementById('result_text_en').innerHTML = displayText;
     setTimeoutForClearText();
 
     if (need_reset) { vr_function(); }
@@ -226,7 +227,8 @@ function setTimeoutForClearText() {
   textUpdateTimeoutID = setTimeout(
     () => {
       document.getElementById('result_text').innerHTML = "";
-      last_finished = ''; // 前回の確定結果もクリアする。
+      document.getElementById('result_text_en').innerHTML = "";
+      last_finished = '';
       textUpdateTimeoutID = 0;
     },
     textUpdateTimeoutSecond * 1000);

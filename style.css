@@ -142,6 +142,16 @@ a:active {
 	opacity: 0.9;
 }
 
+.result_text_en {
+	font-size: 0.6em;
+	color: #ffff88;
+	text-shadow: 0 0 5px #000;
+	margin-top: 0.4em;
+	padding-top: 0.3em;
+	border-top: 1px solid rgba(255, 255, 255, 0.3);
+	word-wrap: break-word;
+}
+
 .text_overlay_wrapper.split .text_area {
 	padding: 0.5rem 1.5rem;
 }
