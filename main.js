@@ -336,7 +336,7 @@ function getFullScreenObject() {
 
 const FullScreenBtn = document.querySelector("#FullScreenBtn"); // フルスクリーン化ボタン
 
-const objResultText = document.querySelector("#result_text");
+const objResultText = document.querySelector("#result_text_container");
 var font_size_windowed = parseFloat(getComputedStyle(objResultText).getPropertyValue('font-size'));
 var flag_font_size_styled = 0;
 
@@ -376,17 +376,17 @@ window.onload = () => {
         flag_font_size_styled = 1;
         font_size_windowed = parseFloat(getComputedStyle(objResultText).fontSize);
       }
-      document.querySelector('#result_text').style.fontSize = parseFloat(getComputedStyle(objResultText).getPropertyValue('font-size')) * ratio + 'px';
+      document.querySelector('#result_text_container').style.fontSize = parseFloat(getComputedStyle(objResultText).getPropertyValue('font-size')) * ratio + 'px';
       console.log("フルスクリーン開始");
 
     } else {
       // フルスクリーン時から通常画面に戻るときに文字と画面の比率を維持
       if (flag_font_size_styled) {
-        document.querySelector('#result_text').style.fontSize = document.querySelector("#value_font_size").textContent + 'px';
+        document.querySelector('#result_text_container').style.fontSize = document.querySelector("#value_font_size").textContent + 'px';
       } else {
         // スライダーでフォントサイズの指定がされていなかった（デフォルトだった）場合は単にstyleのfontSizeを削除する
         // 分割表示時のデフォルトCSSを活かすため
-        document.querySelector('#result_text').style.fontSize = '';
+        document.querySelector('#result_text_container').style.fontSize = '';
       }
       console.log("フルスクリーン終了");
 

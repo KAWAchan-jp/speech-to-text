@@ -69,7 +69,7 @@
           <div class="control_wrapper" style="padding-top: 0.8rem;">
             <div class="control_form control_form_slider col-3">
               <label for="slider_font_size" class="control_label">大きさ</label>
-              <input id="slider_font_size" type="range" class="control_input" value="68" min="1" max="150" step="1" oninput="document.getElementById('result_text').style.fontSize=this.value+'px',document.getElementById('value_font_size').innerHTML=this.value">
+              <input id="slider_font_size" type="range" class="control_input" value="68" min="1" max="150" step="1" oninput="document.getElementById('result_text_container').style.fontSize=this.value+'px',document.getElementById('value_font_size').innerHTML=this.value">
               <div class="control_value">
                 <span id="value_font_size">68</span><span class="value_unit">px</span>
               </div>
@@ -77,7 +77,7 @@
 
             <div class="control_form control_form_slider col-3">
               <label for="slider_opacity" class="control_label">透明度</label>
-              <input id="slider_opacity" type="range" class="control_input" value="0.9" min="0" max="1" step="0.05" oninput="document.getElementById('result_text').style.opacity=this.value,document.getElementById('value_opacity').innerHTML=this.value">
+              <input id="slider_opacity" type="range" class="control_input" value="0.9" min="0" max="1" step="0.05" oninput="document.getElementById('result_text_container').style.opacity=this.value,document.getElementById('value_opacity').innerHTML=this.value">
               <div class="control_value">
                 <span id="value_opacity">0.9</span>
               </div>
@@ -111,7 +111,7 @@
 
             <div class="control_form control_form_slider col-3">
               <label for="slider_text_shadow_stroke" class="control_label">影</label>
-              <input id="slider_text_shadow_stroke" type="range" class="control_input" value="5" min="0" max="20" step="0.1" oninput="document.getElementById('result_text').style.textShadow='0 0 '+this.value+'px '+document.getElementById('selector_text_shadow_color').value,document.getElementById('value_text_shadow_stroke').innerHTML=this.value">
+              <input id="slider_text_shadow_stroke" type="range" class="control_input" value="5" min="0" max="20" step="0.1" oninput="document.getElementById('result_text_container').style.textShadow='0 0 '+this.value+'px '+document.getElementById('selector_text_shadow_color').value,document.getElementById('value_text_shadow_stroke').innerHTML=this.value">
               <div class="control_value">
                 <span id="value_text_shadow_stroke">5</span><span class="value_unit">px</span>
               </div>
@@ -119,7 +119,7 @@
 
             <div class="control_form control_form_slider col-3">
               <label for="slider_text_stroke" class="control_label">フチ</label>
-              <input id="slider_text_stroke" type="range" class="control_input" value="0.3" min="0" max="5" step="0.01" oninput="document.getElementById('result_text').style.webkitTextStrokeWidth=this.value+'px',document.getElementById('value_text_stroke').innerHTML=this.value">
+              <input id="slider_text_stroke" type="range" class="control_input" value="0.3" min="0" max="5" step="0.01" oninput="document.getElementById('result_text_container').style.webkitTextStrokeWidth=this.value+'px',document.getElementById('value_text_stroke').innerHTML=this.value">
               <div class="control_value">
                 <span id="value_text_stroke">0.3</span><span class="value_unit">px</span>
               </div>
@@ -127,7 +127,7 @@
 
             <div class="control_form control_form_slider col-3">
               <label for="slider_line_height" class="control_label">行間</label>
-              <input id="slider_line_height" type="range" class="control_input" value="163" min="100" max="300" step="1" oninput="document.getElementById('result_text').style.lineHeight=this.value+'%',document.getElementById('value_line_height').innerHTML=this.value">
+              <input id="slider_line_height" type="range" class="control_input" value="163" min="100" max="300" step="1" oninput="document.getElementById('result_text_container').style.lineHeight=this.value+'%',document.getElementById('value_line_height').innerHTML=this.value">
               <div class="control_value">
                 <span id="value_line_height">163</span><span class="value_unit">%</span>
               </div>
@@ -135,7 +135,7 @@
 
             <div class="control_form control_form_slider col-3">
               <label for="slider_letter_spacing" class="control_label">字間</label>
-              <input id="slider_letter_spacing" type="range" class="control_input" value="0.05" min="0" max="1" step="0.01" oninput="document.getElementById('result_text').style.letterSpacing=this.value+'em',document.getElementById('value_letter_spacing').innerHTML=this.value">
+              <input id="slider_letter_spacing" type="range" class="control_input" value="0.05" min="0" max="1" step="0.01" oninput="document.getElementById('result_text_container').style.letterSpacing=this.value+'em',document.getElementById('value_letter_spacing').innerHTML=this.value">
               <div class="control_value">
                 <span id="value_letter_spacing">0.05</span>
               </div>
@@ -143,22 +143,22 @@
 
             <div class="control_form control_form_color col-2">
               <label for="selector_text_color" class="control_label">文字色</label>
-              <input id="selector_text_color" type="color" class="control_input" value="#ffffff" oninput="document.getElementById('result_text').style.color=this.value">
+              <input id="selector_text_color" type="color" class="control_input" value="#ffffff" oninput="document.getElementById('result_text_container').style.color=this.value">
             </div>
 
             <div class="control_form control_form_color col-2">
               <label for="selector_text_shadow_color" class="control_label">影色</label>
-              <input id="selector_text_shadow_color" type="color" class="control_input" value="#000000" oninput="document.getElementById('result_text').style.textShadow='0 0 '+document.getElementById('slider_text_shadow_stroke').value+'px '+this.value">
+              <input id="selector_text_shadow_color" type="color" class="control_input" value="#000000" oninput="document.getElementById('result_text_container').style.textShadow='0 0 '+document.getElementById('slider_text_shadow_stroke').value+'px '+this.value">
             </div>
 
             <div class="control_form control_form_color col-2">
               <label for="selector_text_stroke_color" class="control_label">フチ色</label>
-              <input id="selector_text_stroke_color" type="color" class="control_input" value="#000000" oninput="document.getElementById('result_text').style.webkitTextStrokeColor=this.value">
+              <input id="selector_text_stroke_color" type="color" class="control_input" value="#000000" oninput="document.getElementById('result_text_container').style.webkitTextStrokeColor=this.value">
             </div>
 
             <div class="control_form control_form_selector col-3">
               <label for="select_font" class="control_label">フォント </label>
-              <select id="select_font" onchange="document.getElementById('result_text').style.fontFamily=fonts_custom[select_font.selectedIndex][1];document.getElementById('result_text').style.fontWeight=fonts_custom[select_font.selectedIndex][2]" style="width: 94%; height: 100%;"></select>
+              <select id="select_font" onchange="document.getElementById('result_text_container').style.fontFamily=fonts_custom[select_font.selectedIndex][1];document.getElementById('result_text_container').style.fontWeight=fonts_custom[select_font.selectedIndex][2]" style="width: 94%; height: 100%;"></select>
             </div>
 
             <div class="control_form control_form_selector col-2">
