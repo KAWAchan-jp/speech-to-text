@@ -18,8 +18,11 @@ https://kawachan-jp.github.io/speech-to-text/
 - 日本語認識時、文末に「。」を自動付与
 - Enterキーで手動で文を区切る
 
-## 翻訳
-- Google Translate による英語翻訳（ページ読み込み時に自動で英語翻訳をオン）
+## 翻訳・同時表示
+- Google Translate による翻訳（APIキー・アカウント不要）
+- 対応言語：英語・韓国語・ロシア語・フランス語・繁体字中国語（台湾）・インドネシア語
+- ページ読み込み時に自動で英語翻訳をオン
+- 日本語テキストと翻訳テキストを**同時に表示**（区切り線で分離）
 
 ## ひらがな変換
 - 日本語認識時のみ表示されるオプション
@@ -113,4 +116,9 @@ https://kawachan-jp.github.io/speech-to-text/
 
 # 謝辞
 
-本プログラムは [1heisuzuki/speech-to-text-webcam-overlay](https://github.com/1heisuzuki/speech-to-text-webcam-overlay) をベースに、カメラ機能の削除・翻訳の英語固定・デフォルト英語翻訳の自動選択などの変更を加えたものです。
+本プログラムは [1heisuzuki/speech-to-text-webcam-overlay](https://github.com/1heisuzuki/speech-to-text-webcam-overlay) をベースに、以下の変更を加えたものです。
+
+- カメラ機能の削除
+- 翻訳言語を英語・韓国語・ロシア語・フランス語・繁体字中国語（台湾）・インドネシア語に限定
+- ページ読み込み時に英語翻訳を自動選択
+- 日本語と翻訳テキストの同時表示（notranslate + Google Translate ウィジェット活用）
