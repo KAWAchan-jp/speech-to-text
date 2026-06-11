@@ -35,6 +35,7 @@ a:active {
 	height: 240px;
 	margin-bottom: 1rem;
 	transition: all 0.3s;
+	padding: 10px;
 }
 
 .video_area {
