@@ -596,10 +596,15 @@ function updateTtsEnabled(checkbox) {
   }
 }
 
-// Google翻訳ウィジェットの言語セレクタから翻訳先言語を取得する
+// 現在の翻訳先言語を取得する
+// ウィジェットの言語メニューはiframe内に生成されchangeイベントが取れないため、
+// コンボボックス → ウィジェットが設定する googtrans クッキー の順で調べる
 function getTranslationTargetLang() {
   const combo = document.querySelector('.goog-te-combo');
-  return (combo && combo.value) ? combo.value : 'en';
+  if (combo && combo.value) return combo.value;
+  const match = document.cookie.match(/googtrans=\/[^\/;]*\/([^;]+)/);
+  if (match) return decodeURIComponent(match[1]);
+  return 'en';
 }
 
 // 翻訳先言語に合う音声だけを「声」セレクタに反映する
@@ -620,15 +625,18 @@ if ('speechSynthesis' in window) {
   speechSynthesis.onvoiceschanged = updateTtsVoiceList;
 }
 
-// 翻訳先言語が切り替えられたら音声リストを更新し、読み上げ中のものは打ち切る
-// （ウィジェットのセレクタは後から生成されるため、documentでのイベント委譲で拾う）
-document.addEventListener('change', function(e) {
-  if (e.target && String(e.target.className).includes('goog-te-combo')) {
-    speechSynthesis.cancel();
+// 翻訳先言語の切り替えを監視し、声リストを連動させる
+// （言語メニューはiframe内にありイベントで検知できないため、1秒ごとのポーリングで監視する）
+var tts_current_target = '';
+setInterval(function() {
+  const target = getTranslationTargetLang();
+  if (target !== tts_current_target) {
+    tts_current_target = target;
+    speechSynthesis.cancel(); // 言語が変わったので読み上げ中・待機中のものは打ち切る
     tts_last_spoken = '';
-    setTimeout(updateTtsVoiceList, 0);
+    updateTtsVoiceList();
   }
-});
+}, 1000);
 
 // 読み上げ中（または読み上げ待ち）かどうか
 function isTtsSpeaking() {
