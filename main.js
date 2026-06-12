@@ -1,13 +1,11 @@
-// PWA化のためにService Workerを登録
+// 旧バージョンで登録したService Workerを解除する
+// （空実装で意味がなかったため廃止。登録済みユーザーのブラウザから取り除くための処理で、
+// 　十分に行き渡ったらこのブロックごと削除してよい）
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service_worker.js')
-    .then((registration) => {
-      console.log(`[Main] ServiceWorker registration finished. Scope:${registration.scope}`);
-    })
-    .catch((reason) => {
-      console.log(`[Main] ServiceWorker registratio failed. Reason:${reason}`);
-    });
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      registration.unregister();
+    }
   });
 }
 
