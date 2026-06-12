@@ -24,8 +24,11 @@
 
 <body>
   <div class="main">
-    <div id="status" class="error">起動中...</div>
-    <div id="status_kuromoji_loading" class="hidden"></div>
+    <!-- notranslate: 翻訳対象は字幕(#result_text_en)のみとし、UI部分はページ翻訳から除外する -->
+    <div class="notranslate">
+      <div id="status" class="error">起動中...</div>
+      <div id="status_kuromoji_loading" class="hidden"></div>
+    </div>
 
     <div id="video_wrapper" class="video_wrapper">
       <div id="video_bg" class="video_bg hidden"></div>
@@ -39,11 +42,11 @@
       <img alt="FullScreen" src="fullscreen.svg" id="FullScreenBtn" class="FullScreenBtn" width="20" height="20" style="display:block">
     </div>
 
-    <div id="help_on_error" class="help_on_error">
+    <div id="help_on_error" class="help_on_error notranslate">
       カメラやマイクが機能しないとき → ページの再読み込みや，ブラウザの設定を確認してください: <a href="https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=ja&oco=1" target="_blank">Chrome ヘルプ</a>
     </div>
 
-    <div class="interface_wrapper">
+    <div class="interface_wrapper notranslate">
       <input class="checkboxes" id="checkbox_controls" type="checkbox" checked><label class="checkboxes_label" for="checkbox_controls">詳細設定を表示</label>
       <input class="checkboxes" id="checkbox_log" type="checkbox" checked><label class="checkboxes_label" for="checkbox_log">認識結果のログを表示</label>
       <div class="controls_wrapper control_wrapper_row">
@@ -235,13 +238,13 @@
         </div>
       </div>
     </div>
-    <div class="help_wrapper">
+    <div class="help_wrapper notranslate">
       <div class="help_text">
         よくある質問・ソースコード: <a href="https://github.com/KAWAchan-jp/speech-to-text" target="_blank">GitHub</a><br /> 音声認識は <a href="https://developer.mozilla.org/ja/docs/Web/API/Web_Speech_API" target="_blank">Web Speech
           API</a> を利用しています。<br /> カメラやマイクが機能しないとき → ページの再読み込みや，ブラウザの設定を確認してください: <a href="https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=ja&oco=1">Chrome ヘルプ</a><br> 「ログをダウンロード」でダウンロードされるファイルは，アクセスしているユーザーのブラウザで生成されています。
       </div>
       <!-- アプリのバージョン番号（修正のたびに4桁目をインクリメントする） -->
-      <div id="app_version" class="help_text" style="text-align: right; opacity: 0.6;">v1.0.0.3</div>
+      <div id="app_version" class="help_text" style="text-align: right; opacity: 0.6;">v1.0.0.4</div>
     </div>
   </div>
   <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
