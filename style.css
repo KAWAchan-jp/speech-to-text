@@ -233,6 +233,19 @@ a:active {
 	display: flex;
 }
 
+/* 外観の設定（最初に決めたらあまり触らない項目）をまとめる折りたたみ領域 */
+.appearance_wrapper {
+	display: flex;
+	flex-wrap: wrap;
+	flex: 0 0 100%;
+	max-width: 100%;
+	margin-top: 1rem;
+}
+
+.appearance_wrapper.folded {
+	display: none;
+}
+
 .control_wrapper {
 	display: flex;
 	flex-wrap: wrap;

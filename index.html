@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>  
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@700&family=BIZ+UDPMincho&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?ver=202606131700" type="text/css" media="screen">
+  <link rel="stylesheet" href="style.css?ver=202606131800" type="text/css" media="screen">
   <link rel="manifest" href="manifest.json">
 </head>
 
@@ -50,13 +50,6 @@
       <input class="checkboxes" id="checkbox_controls" type="checkbox" checked><label class="checkboxes_label" for="checkbox_controls">詳細設定を表示</label>
       <input class="checkboxes" id="checkbox_log" type="checkbox" checked><label class="checkboxes_label" for="checkbox_log">認識結果のログを表示</label>
       <div class="controls_wrapper control_wrapper_row">
-        <div class="control_button_wrapper">
-          <input type="button" value="文字 表示/非表示" onclick="toggleClass('text_overlay_wrapper','hidden')">
-          <input type="button" value="文字 左右反転" onclick="toggleClass('text_overlay_wrapper','mirror')">
-          <input type="button" value="全画面化ボタン 表示/非表示" onclick="toggleClass('FullScreenBtn','hidden')">
-          <input type="button" value="設定の初期化" onclick="deleteConfig()">
-        </div>
-  
         <div class="control_selector_wrapper">
           音声認識<a href="https://github.com/KAWAchan-jp/speech-to-text#他の言語を認識したい" target="_blank">[?]</a>:
           <select id="select_language" class="selector" onchange="updateCountry()"></select>
@@ -80,6 +73,18 @@
             </select>
           </span>
           <span class="help_text">*読み上げ中は音声認識を一時停止します。スピーカー使用時は読み上げ音声をマイクが拾うため、ヘッドホンの使用をおすすめします。</span>
+        </div>
+
+        <div class="control_selector_wrapper">
+          <input type="button" value="外観の設定 表示/非表示" onclick="toggleClass('appearance_wrapper','folded')">
+        </div>
+        <!-- 外観の設定（最初に決めたらあまり触らない項目）はデフォルトで折りたたんでおく -->
+        <div id="appearance_wrapper" class="appearance_wrapper folded">
+        <div class="control_button_wrapper">
+          <input type="button" value="文字 表示/非表示" onclick="toggleClass('text_overlay_wrapper','hidden')">
+          <input type="button" value="文字 左右反転" onclick="toggleClass('text_overlay_wrapper','mirror')">
+          <input type="button" value="全画面化ボタン 表示/非表示" onclick="toggleClass('FullScreenBtn','hidden')">
+          <input type="button" value="設定の初期化" onclick="deleteConfig()">
         </div>
         <div class="col-12 control_wrapper_col">
           <div class="control_header">文字の調整</div>
@@ -223,6 +228,7 @@
             </div>
           </div>
         </div>
+        </div><!-- /appearance_wrapper -->
       </div>
       <div id="log" class="log_wrapper">
         <div class="control_header">認識結果のログ</div>
@@ -244,14 +250,14 @@
           API</a> を利用しています。<br /> カメラやマイクが機能しないとき → ページの再読み込みや，ブラウザの設定を確認してください: <a href="https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=ja&oco=1">Chrome ヘルプ</a><br> 「ログをダウンロード」でダウンロードされるファイルは，アクセスしているユーザーのブラウザで生成されています。
       </div>
       <!-- アプリのバージョン番号（修正のたびに4桁目をインクリメントする） -->
-      <div id="app_version" class="help_text" style="text-align: right; opacity: 0.6;">v1.0.0.6</div>
+      <div id="app_version" class="help_text" style="text-align: right; opacity: 0.6;">v1.0.0.7</div>
     </div>
   </div>
   <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
   <script src="kuromoji/build/kuromoji.js" defer></script>
   <!-- Chrome で MediaDevices.enumerateDevices() を動かすためのpolyfill -->
   <script src="https://webrtc.github.io/adapter/adapter-latest.js" defer></script>
-  <script src="./main.js?v=202606131600" defer></script>
+  <script src="./main.js?v=202606131800" defer></script>
 </body>
 
 </html>

@@ -751,7 +751,8 @@ function initConfig() {
   });
   ['video_bg',
     'text_overlay_wrapper',
-    'FullScreenBtn'
+    'FullScreenBtn',
+    'appearance_wrapper'
   ].forEach(id => {
     if (typeof config[id] !== 'undefined') {
       const el = document.getElementById(id);
