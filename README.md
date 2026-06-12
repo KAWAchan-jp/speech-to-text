@@ -80,7 +80,7 @@ https://kawachan-jp.github.io/speech-to-text/
 
 - 設定はブラウザの localStorage に自動保存・復元
 - ページ右下にバージョン番号を表示
-- PWA対応（Service Worker によるオフライン動作）
+- PWA対応（ホーム画面への追加が可能。オフライン動作は非対応）
 
 ---
 
