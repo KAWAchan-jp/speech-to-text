@@ -610,15 +610,34 @@ function getTranslationTargetLang() {
 // 翻訳先言語に合う音声だけを「声」セレクタに反映する
 function updateTtsVoiceList() {
   const select = document.getElementById('select_tts_voice');
-  const target = getTranslationTargetLang().toLowerCase().split('-')[0];
+  const target = getTranslationTargetLang();
+  const target_prefix = target.toLowerCase().split('-')[0];
   tts_voices = speechSynthesis.getVoices().filter(
-    v => v.lang.toLowerCase().replace('_', '-').split('-')[0] === target
+    v => v.lang.toLowerCase().replace('_', '-').split('-')[0] === target_prefix
   );
   select.innerHTML = '';
   for (var i = 0; i < tts_voices.length; i++) {
     select.options[i] = new Option(tts_voices[i].name, i);
   }
+  // この言語で以前選んだ声が保存されていれば選択を復元する
+  const saved_name = (config.tts_voice || {})[target];
+  if (saved_name) {
+    for (var j = 0; j < tts_voices.length; j++) {
+      if (tts_voices[j].name === saved_name) {
+        select.value = String(j);
+        break;
+      }
+    }
+  }
 }
+
+// 選んだ声を翻訳先言語ごとに保存する（言語を切り替えても選択が維持されるように）
+document.getElementById('select_tts_voice').addEventListener('change', function() {
+  const voice = tts_voices[Number(this.value)];
+  if (voice) {
+    updateConfigClass('tts_voice', getTranslationTargetLang(), voice.name);
+  }
+});
 
 // 音声リストは非同期に読み込まれるため、読み込み完了時にもセレクタを更新する
 if ('speechSynthesis' in window) {
