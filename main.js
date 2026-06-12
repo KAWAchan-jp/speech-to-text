@@ -152,6 +152,12 @@ function vr_function() {
     var need_reset = false;
     for (var i = event.resultIndex; i < results.length; i++) {
       if (results[i].isFinal) {
+        // 無音時などに空の確定結果が来ることがあり、「。」だけの字幕が表示・翻訳・読み上げ
+        // されてしまうため、空の場合は無視する
+        if (results[i][0].transcript.trim() === '') {
+          flag_speech = 0;
+          continue;
+        }
         last_finished = results[i][0].transcript;
         const is_end_of_sentence = last_finished.endsWith('。') || last_finished.endsWith('？') || last_finished.endsWith('！');
         if (lang == 'ja-JP' && is_end_of_sentence != true) {
@@ -688,6 +694,7 @@ new MutationObserver(function() {
   if (!tts_enabled) return;
   const text = getFirstLineText(document.getElementById('result_text_en'));
   if (text === '') return;                  // 自動クリア等で空になった
+  if (!/[\p{L}\p{N}]/u.test(text)) return;  // 句読点や記号だけのテキストは読み上げない
   if (text === tts_original_text) return;   // まだ翻訳されていない（原文のまま）
   if (text === tts_last_spoken) return;     // 読み上げ済み
   tts_last_spoken = text;
