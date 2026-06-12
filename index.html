@@ -64,6 +64,20 @@
           <a href="https://github.com/KAWAchan-jp/speech-to-text#自動で翻訳したい" target="_blank">[?]</a>:
           <div id="google_translate_element" class="select_translation selector"></div>
         </div>
+        <div class="control_selector_wrapper">
+          <label for="checkbox_tts">翻訳読み上げ</label>: <input type="checkbox" id="checkbox_tts" name="checkbox_tts" oninput="updateTtsEnabled(this)">
+          <span class="selector">声: <select id="select_tts_voice" class="selector"></select></span>
+          <span class="selector">速さ:
+            <select id="select_tts_rate" class="selector">
+              <option value="0.75">0.75</option>
+              <option value="1" selected>1.0</option>
+              <option value="1.25">1.25</option>
+              <option value="1.5">1.5</option>
+              <option value="2">2.0</option>
+            </select>
+          </span>
+          <span class="help_text">*読み上げ中は音声認識を一時停止します。スピーカー使用時は読み上げ音声をマイクが拾うため、ヘッドホンの使用をおすすめします。</span>
+        </div>
         <div class="col-12 control_wrapper_col">
           <div class="control_header">文字の調整</div>
           <div class="control_wrapper" style="padding-top: 0.8rem;">
@@ -227,14 +241,14 @@
           API</a> を利用しています。<br /> カメラやマイクが機能しないとき → ページの再読み込みや，ブラウザの設定を確認してください: <a href="https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=ja&oco=1">Chrome ヘルプ</a><br> 「ログをダウンロード」でダウンロードされるファイルは，アクセスしているユーザーのブラウザで生成されています。
       </div>
       <!-- アプリのバージョン番号（修正のたびに4桁目をインクリメントする） -->
-      <div id="app_version" class="help_text" style="text-align: right; opacity: 0.6;">v1.0.0.0</div>
+      <div id="app_version" class="help_text" style="text-align: right; opacity: 0.6;">v1.0.0.1</div>
     </div>
   </div>
   <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
   <script src="kuromoji/build/kuromoji.js" defer></script>
   <!-- Chrome で MediaDevices.enumerateDevices() を動かすためのpolyfill -->
   <script src="https://webrtc.github.io/adapter/adapter-latest.js" defer></script>
-  <script src="./main.js?v=202210222000" defer></script>
+  <script src="./main.js?v=202606131300" defer></script>
 </body>
 
 </html>

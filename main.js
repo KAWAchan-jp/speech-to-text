@@ -144,6 +144,9 @@ function vr_function() {
   };
 
   recognition.onresult = function(event) {
+    // 読み上げ中はマイクが読み上げ音声を拾って再認識するループを防ぐため、認識結果を破棄する
+    if (tts_enabled && isTtsSpeaking()) return;
+
     var results = event.results;
     var current_transcripts = ''; // resultsが複数ある場合は全て連結する。
     var need_reset = false;
@@ -173,6 +176,7 @@ function vr_function() {
 
         document.getElementById('result_log').insertAdjacentHTML('beforeend', result_log + '\n');
         textAreaHeightSet(document.getElementById('result_log'));
+        tts_last_spoken = ''; // 新しい確定文が来たので、同じ文の連続でも読み上げられるようにリセット
         need_reset = true;
         setTimeoutForClearText();
         flag_speech = 0;
@@ -191,6 +195,8 @@ function vr_function() {
     }
     document.getElementById('result_text').innerHTML = displayText;
     document.getElementById('result_text_en').innerHTML = displayText;
+    // 翻訳前の原文を記録する（MutationObserver側で「翻訳がまだ済んでいない」状態を判定するため）
+    tts_original_text = getFirstLineText(document.getElementById('result_text_en'));
     setTimeoutForClearText();
 
     if (need_reset) { vr_function(); }
@@ -571,8 +577,95 @@ function googleTranslateElementInit() {
       select.value = 'en';
       select.dispatchEvent(new Event('change'));
     }
+    updateTtsVoiceList();
   }, 1000);
 }
+
+// 翻訳読み上げ（TTS）機能
+// Google翻訳ウィジェットが #result_text_en のDOMを書き換えたタイミングを
+// MutationObserverで検知し、翻訳後のテキストを speechSynthesis で読み上げる。
+var tts_enabled = false;    // 読み上げのON/OFF
+var tts_last_spoken = '';   // 直前に読み上げたテキスト（同じ文を繰り返し読まないため）
+var tts_original_text = ''; // 翻訳前の原文（原文のまま＝翻訳未完了の判定に使う）
+var tts_voices = [];        // 翻訳先言語に合う音声のリスト
+
+function updateTtsEnabled(checkbox) {
+  tts_enabled = checkbox.checked;
+  if (!tts_enabled) {
+    speechSynthesis.cancel();
+  }
+}
+
+// Google翻訳ウィジェットの言語セレクタから翻訳先言語を取得する
+function getTranslationTargetLang() {
+  const combo = document.querySelector('.goog-te-combo');
+  return (combo && combo.value) ? combo.value : 'en';
+}
+
+// 翻訳先言語に合う音声だけを「声」セレクタに反映する
+function updateTtsVoiceList() {
+  const select = document.getElementById('select_tts_voice');
+  const target = getTranslationTargetLang().toLowerCase().split('-')[0];
+  tts_voices = speechSynthesis.getVoices().filter(
+    v => v.lang.toLowerCase().replace('_', '-').split('-')[0] === target
+  );
+  select.innerHTML = '';
+  for (var i = 0; i < tts_voices.length; i++) {
+    select.options[i] = new Option(tts_voices[i].name, i);
+  }
+}
+
+// 音声リストは非同期に読み込まれるため、読み込み完了時にもセレクタを更新する
+if ('speechSynthesis' in window) {
+  speechSynthesis.onvoiceschanged = updateTtsVoiceList;
+}
+
+// 翻訳先言語が切り替えられたら音声リストを更新し、読み上げ中のものは打ち切る
+// （ウィジェットのセレクタは後から生成されるため、documentでのイベント委譲で拾う）
+document.addEventListener('change', function(e) {
+  if (e.target && String(e.target.className).includes('goog-te-combo')) {
+    speechSynthesis.cancel();
+    tts_last_spoken = '';
+    setTimeout(updateTtsVoiceList, 0);
+  }
+});
+
+// 読み上げ中（または読み上げ待ち）かどうか
+function isTtsSpeaking() {
+  return ('speechSynthesis' in window) && (speechSynthesis.speaking || speechSynthesis.pending);
+}
+
+// 要素内の最初の<br>までのテキストを取得する（確定済みの1文目だけを読み上げ対象にするため）
+function getFirstLineText(el) {
+  var text = '';
+  for (var i = 0; i < el.childNodes.length; i++) {
+    if (el.childNodes[i].nodeName === 'BR') break;
+    text += el.childNodes[i].textContent;
+  }
+  return text.trim();
+}
+
+function speakTranslation(text) {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = getTranslationTargetLang();
+  const voice = tts_voices[Number(document.getElementById('select_tts_voice').value)];
+  if (voice) {
+    utterance.voice = voice;
+  }
+  utterance.rate = Number(document.getElementById('select_tts_rate').value) || 1;
+  speechSynthesis.speak(utterance);
+}
+
+// 翻訳結果のDOM書き換えを監視して読み上げる
+new MutationObserver(function() {
+  if (!tts_enabled) return;
+  const text = getFirstLineText(document.getElementById('result_text_en'));
+  if (text === '') return;                  // 自動クリア等で空になった
+  if (text === tts_original_text) return;   // まだ翻訳されていない（原文のまま）
+  if (text === tts_last_spoken) return;     // 読み上げ済み
+  tts_last_spoken = text;
+  speakTranslation(text);
+}).observe(document.getElementById('result_text_en'), { childList: true, subtree: true, characterData: true });
 
 // フォント切替
 // 参考: https://www.google.com/intl/ja/chrome/demos/speech.html
@@ -643,7 +736,8 @@ function initConfig() {
   ['checkbox_controls',
     'checkbox_log',
     'checkbox_timestamp',
-    'checkbox_hiragana'
+    'checkbox_hiragana',
+    'checkbox_tts'
   ].forEach(id => {
     const el = document.getElementById(id);
     if(el){
@@ -671,6 +765,11 @@ function initConfig() {
     selectValueIfExists(el, config.select_autoclear_text);
     triggerEvent('change', el);
   }
+  if (typeof config.select_tts_rate !== 'undefined') {
+    const el = document.getElementById('select_tts_rate');
+    selectValueIfExists(el, config.select_tts_rate);
+    triggerEvent('change', el);
+  }
 
   document.querySelectorAll('input.control_input').forEach(
     el => el.addEventListener('input', updateConfigValue)
@@ -681,6 +780,7 @@ function initConfig() {
   document.querySelector('#select_font').addEventListener('change', updateConfigValue);
 
   document.querySelector('#select_autoclear_text').addEventListener('change', updateConfigValue);
+  document.querySelector('#select_tts_rate').addEventListener('change', updateConfigValue);
 }
 
 function updateConfig(key, value) {
