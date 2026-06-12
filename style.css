@@ -400,6 +400,17 @@ select {
 	text-align: center;
 }
 
+/* Edgeの長い音声名でレイアウトが崩れないように最大幅を制限する */
+#select_tts_voice {
+	max-width: 26rem;
+}
+
+/* 読み上げの注意書きは独立した行で表示する */
+.tts_help_text {
+	margin-top: 0.3rem;
+	opacity: 0.7;
+}
+
 #FullScreenBtn {
 	position: absolute;
 	right: 20px;
