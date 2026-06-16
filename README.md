@@ -42,6 +42,7 @@ https://kawachan-jp.github.io/speech-to-text/
 
 ### Gemini Live 翻訳（実験的）
 
+- 試験的に追加した機能です。Gemini API側の仕様変更や対応モデルの状況により、挙動が変わったり利用できなくなる場合があります
 - Gemini Live API による音声→音声リアルタイム翻訳
 - 使用するGemini Live対応モデルを選択可能（カスタムモデル名の入力にも対応）
 - 翻訳音声の再生オン/オフを切り替え可能
