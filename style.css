@@ -390,6 +390,15 @@ select {
 	display: inline;
 }
 
+.disabled_control {
+	opacity: 0.45;
+	pointer-events: none;
+}
+
+.disabled_control .goog-te-combo {
+	cursor: not-allowed;
+}
+
 .selector {
 	margin-right: 1rem;
 }

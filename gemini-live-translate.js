@@ -57,6 +57,19 @@ function getGeminiModel() {
   return normalizeGeminiModelName(document.getElementById('input_gemini_model').value);
 }
 
+function setGoogleTranslateUiEnabled(enabled) {
+  const wrapper = document.getElementById('google_translate_element');
+  if (wrapper) {
+    wrapper.classList.toggle('disabled_control', !enabled);
+    wrapper.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    wrapper.title = enabled ? '' : 'Gemini Live 翻訳が有効な間は Google 翻訳を変更できません';
+  }
+  const combo = document.querySelector('.goog-te-combo');
+  if (combo) {
+    combo.disabled = !enabled;
+  }
+}
+
 function resetGeminiModelSelection(model) {
   const modelSelect = document.getElementById('select_gemini_model');
   if (!modelSelect) return;
@@ -141,6 +154,7 @@ function updateGeminiModelSelection(select) {
       updateGeminiAudioEnabled(audioCheckbox);
     }
   }
+  setGoogleTranslateUiEnabled(!gemini_live_active);
 })();
 
 // チェックボックスのトグルから呼ばれる
@@ -180,6 +194,7 @@ async function startGeminiLive() {
 
   // 通常の音声認識・読み上げを止める
   gemini_live_active = true;
+  setGoogleTranslateUiEnabled(false);
   gemini_input_acc = '';
   gemini_output_acc = '';
   gemini_turn_done = false;
@@ -194,6 +209,7 @@ async function startGeminiLive() {
   } catch (e) {
     alert('マイクの取得に失敗しました: ' + e.message);
     gemini_live_active = false;
+    setGoogleTranslateUiEnabled(true);
     document.getElementById('checkbox_gemini_live').checked = false;
     return;
   }
@@ -438,6 +454,7 @@ function playGeminiAudioChunk(base64Data) {
 function stopGeminiLive(options) {
   const restartRecognition = !options || options.restartRecognition !== false;
   gemini_live_active = false;
+  setGoogleTranslateUiEnabled(true);
 
   if (gemini_clear_timer) {
     clearTimeout(gemini_clear_timer);
