@@ -75,6 +75,32 @@
           <div class="help_text tts_help_text">*読み上げ中は音声認識を一時停止します。スピーカー使用時は読み上げ音声をマイクが拾うため、ヘッドホンの使用をおすすめします。</div>
         </div>
 
+        <!-- Gemini Live APIによる音声→音声リアルタイム翻訳 -->
+        <div class="control_selector_wrapper">
+          <label for="checkbox_gemini_live">Gemini Live 翻訳</label>: <input type="checkbox" id="checkbox_gemini_live" name="checkbox_gemini_live" oninput="updateGeminiLiveEnabled(this)">
+          <span class="selector">モデル:
+            <select id="select_gemini_model" class="selector" onchange="updateGeminiModelSelection(this)">
+              <option value="models/gemini-3.5-live-translate-preview">gemini-3.5-live-translate-preview</option>
+              <option value="models/gemini-live-2.5-flash-preview">gemini-live-2.5-flash-preview</option>
+              <option value="custom">カスタム</option>
+            </select>
+            <input type="text" id="input_gemini_model" class="selector" placeholder="models/..." style="width: 18rem; max-width: 90vw; display: none;" autocomplete="off">
+          </span>
+          <span class="selector">翻訳先:
+            <select id="select_gemini_live_lang" class="selector">
+              <option value="en">English</option>
+              <option value="ko">한국어</option>
+              <option value="ru">Русский</option>
+              <option value="fr">Français</option>
+              <option value="zh">中文</option>
+              <option value="id">Bahasa Indonesia</option>
+            </select>
+          </span>
+          <span class="selector"><label for="checkbox_gemini_audio">翻訳音声を再生</label>: <input type="checkbox" id="checkbox_gemini_audio" name="checkbox_gemini_audio" checked oninput="updateGeminiAudioEnabled(this)"></span>
+          <span class="selector">APIキー: <input type="password" id="input_gemini_token" class="selector" placeholder="AQ... または AIzaSy..." style="width: 16rem; max-width: 90vw;" autocomplete="off"></span>
+          <div class="help_text">*音声→音声のリアルタイム翻訳をGemini APIで行います。有効化中は通常の音声認識・ページ翻訳・読み上げは停止します。モデル名はGemini Live API対応モデルを選ぶか、カスタム欄に入力してください。「翻訳音声を再生」をオフにすると字幕だけ表示します（音が出ないのでヘッドホン不要・ループも起きません）。オン時にスピーカーを使うと翻訳音声をマイクが拾ってループするため、ヘッドホンを推奨します。利用には自分のGemini APIキーが必要です。入力欄が空のときは gemini-live-translate.config.js の値を使います。キーはクライアント側に出るため、公開しない用途で使用してください。</div>
+        </div>
+
         <div class="control_selector_wrapper">
           <input type="button" value="外観の設定 表示/非表示" onclick="toggleClass('appearance_wrapper','folded')">
         </div>
@@ -250,7 +276,7 @@
           API</a> を利用しています。<br /> カメラやマイクが機能しないとき → ページの再読み込みや，ブラウザの設定を確認してください: <a href="https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=ja&oco=1">Chrome ヘルプ</a><br> 「ログをダウンロード」でダウンロードされるファイルは，アクセスしているユーザーのブラウザで生成されています。
       </div>
       <!-- アプリのバージョン番号（修正のたびに4桁目をインクリメントする） -->
-      <div id="app_version" class="help_text" style="text-align: right; opacity: 0.6;">v1.0.1.1</div>
+      <div id="app_version" class="help_text" style="text-align: right; opacity: 0.6;">v1.0.1.8</div>
     </div>
   </div>
   <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
@@ -258,6 +284,9 @@
   <!-- Chrome で MediaDevices.enumerateDevices() を動かすためのpolyfill -->
   <script src="https://webrtc.github.io/adapter/adapter-latest.js" defer></script>
   <script src="./main.js?v=202606132000" defer></script>
+  <!-- Gemini Live 翻訳（実験的機能）。config.jsはAPIキー設定用で.gitignore対象（無くてもエラーにはならない） -->
+  <script src="./gemini-live-translate.config.js" defer></script>
+  <script src="./gemini-live-translate.js?v=202606162340" defer></script>
 </body>
 
 </html>

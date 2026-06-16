@@ -115,6 +115,9 @@ var textUpdateTimeoutID = 0;
 var textUpdateTimeoutSecond = 30; // 音声認識結果が更新されない場合にクリアするまでの秒数（0以下の場合は自動クリアしない）
 
 function vr_function() {
+  // Gemini Live 翻訳が有効な間はWeb Speech認識を起動しない
+  if (typeof gemini_live_active !== 'undefined' && gemini_live_active) return;
+
   window.SpeechRecognition = window.SpeechRecognition || webkitSpeechRecognition;
   recognition = new webkitSpeechRecognition();
   recognition.lang = lang;
@@ -690,6 +693,8 @@ function speakTranslation(text) {
 // 翻訳結果のDOM書き換えを監視して読み上げる
 new MutationObserver(function() {
   if (!tts_enabled) return;
+  // Gemini Live 翻訳が有効な間は、その音声出力と二重に読み上げないようブラウザTTSを止める
+  if (typeof gemini_live_active !== 'undefined' && gemini_live_active) return;
   const text = getFirstLineText(document.getElementById('result_text_en'));
   if (text === '') return;                  // 自動クリア等で空になった
   if (!/[\p{L}\p{N}]/u.test(text)) return;  // 句読点や記号だけのテキストは読み上げない

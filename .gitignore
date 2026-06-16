@@ -1,0 +1,2 @@
+# Gemini Live 翻訳機能（実験的）のAPIキー設定ファイル。各自のローカル環境でのみ用意する。
+gemini-live-translate.config.js
