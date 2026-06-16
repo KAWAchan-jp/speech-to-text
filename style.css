@@ -400,6 +400,77 @@ select {
 	text-align: center;
 }
 
+.gemini_live_controls {
+	text-align: left;
+}
+
+.gemini_live_controls > label {
+	display: inline-block;
+	margin-bottom: 0.5rem;
+}
+
+.gemini_live_grid {
+	display: grid;
+	grid-template-columns: minmax(14rem, 1.5fr) minmax(9rem, 1fr) auto minmax(15rem, 1.4fr);
+	gap: 0.5rem 0.75rem;
+	align-items: end;
+}
+
+.gemini_live_field {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 0.4rem;
+	align-items: center;
+	margin: 0;
+}
+
+.gemini_live_field span,
+.gemini_live_check span {
+	color: #bbb;
+	white-space: nowrap;
+}
+
+.gemini_live_field select,
+.gemini_live_field input {
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+}
+
+.gemini_model_custom {
+	display: none;
+	grid-column: 1 / 3;
+}
+
+.gemini_live_check {
+	display: flex;
+	gap: 0.3rem;
+	align-items: center;
+	margin: 0;
+	white-space: nowrap;
+}
+
+.gemini_api_key {
+	grid-column: 4 / 5;
+}
+
+.gemini_help_text {
+	margin-top: 0.5rem;
+	line-height: 150%;
+	opacity: 0.75;
+}
+
+@media (max-width: 900px) {
+	.gemini_live_grid {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.gemini_model_custom,
+	.gemini_api_key {
+		grid-column: 1 / -1;
+	}
+}
+
 /* Edgeの長い音声名でレイアウトが崩れないように最大幅を制限する */
 #select_tts_voice {
 	max-width: 26rem;

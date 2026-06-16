@@ -24,6 +24,13 @@ var gemini_output_acc = '';  // 翻訳の累積
 var gemini_turn_done = false; // 直前のターンが完了したか（次の字幕が来たらクリアする）
 var gemini_clear_timer = 0;   // 「自動消去」用タイマーID
 const GEMINI_DEFAULT_MODEL = 'models/gemini-3.5-live-translate-preview';
+const GEMINI_KNOWN_MODELS = [
+  'models/gemini-3.5-live-translate-preview',
+  'models/gemini-live-2.5-flash-preview'
+];
+const GEMINI_UNSUPPORTED_BIDI_MODELS = [
+  'models/gemini-live-2.5-flash-preview'
+];
 
 // 使用するキーを決める。入力欄を優先し、空ならconfig.jsのGEMINI_API_KEYを使う。
 function getGeminiKey() {
@@ -36,7 +43,10 @@ function getGeminiKey() {
 function normalizeGeminiModelName(model) {
   const value = (model || '').trim();
   if (!value) return GEMINI_DEFAULT_MODEL;
-  return value.startsWith('models/') ? value : 'models/' + value;
+  if (value === 'custom') return 'custom';
+  const normalized = value.startsWith('models/') ? value : 'models/' + value;
+  if (GEMINI_KNOWN_MODELS.includes(normalized)) return normalized;
+  return normalized;
 }
 
 function getGeminiModel() {
@@ -47,12 +57,34 @@ function getGeminiModel() {
   return normalizeGeminiModelName(document.getElementById('input_gemini_model').value);
 }
 
+function resetGeminiModelSelection(model) {
+  const modelSelect = document.getElementById('select_gemini_model');
+  if (!modelSelect) return;
+  if (selectValueIfExists(modelSelect, model)) {
+    modelSelect.value = model;
+    localStorage.setItem('gemini_model_select', model);
+    updateGeminiModelSelection(modelSelect);
+  }
+}
+
+async function restartGeminiLiveIfActive() {
+  if (!gemini_live_active) return;
+  stopGeminiLive({ restartRecognition: false });
+  await startGeminiLive();
+}
+
 function updateGeminiModelSelection(select) {
   const customInput = document.getElementById('input_gemini_model');
   if (!customInput) return;
-  customInput.style.display = select.value === 'custom' ? 'inline-block' : 'none';
+  const customField = customInput.closest('.gemini_model_custom');
+  if (customField) {
+    customField.style.display = select.value === 'custom' ? 'grid' : 'none';
+  } else {
+    customInput.style.display = select.value === 'custom' ? 'inline-block' : 'none';
+  }
   localStorage.setItem('gemini_model_select', select.value);
   localStorage.setItem('gemini_model_custom', customInput.value.trim());
+  restartGeminiLiveIfActive();
 }
 
 // Gemini Liveの設定をブラウザ(localStorage)に保存し、リロード後も復元する。
@@ -61,6 +93,8 @@ function updateGeminiModelSelection(select) {
   const keyInput = document.getElementById('input_gemini_token');
   const modelSelect = document.getElementById('select_gemini_model');
   const modelInput = document.getElementById('input_gemini_model');
+  const langSelect = document.getElementById('select_gemini_live_lang');
+  const audioCheckbox = document.getElementById('checkbox_gemini_audio');
   if (keyInput) {
     const savedKey = localStorage.getItem('gemini_api_key');
     if (savedKey) keyInput.value = savedKey;
@@ -69,11 +103,18 @@ function updateGeminiModelSelection(select) {
     });
   }
   if (modelSelect && modelInput) {
-    const savedSelect = localStorage.getItem('gemini_model_select');
+    let savedSelect = normalizeGeminiModelName(localStorage.getItem('gemini_model_select'));
     const savedCustom = localStorage.getItem('gemini_model_custom');
     if (savedCustom) modelInput.value = savedCustom;
-    if (savedSelect && selectValueIfExists(modelSelect, savedSelect)) {
+    if (savedSelect === 'custom') {
+      modelSelect.value = 'custom';
+      localStorage.setItem('gemini_model_select', 'custom');
+    } else if (savedSelect && !selectValueIfExists(modelSelect, savedSelect)) {
+      savedSelect = GEMINI_DEFAULT_MODEL;
+    }
+    if (savedSelect !== 'custom' && savedSelect && selectValueIfExists(modelSelect, savedSelect)) {
       modelSelect.value = savedSelect;
+      localStorage.setItem('gemini_model_select', savedSelect);
     }
     updateGeminiModelSelection(modelSelect);
     modelSelect.addEventListener('change', function() {
@@ -82,6 +123,23 @@ function updateGeminiModelSelection(select) {
     modelInput.addEventListener('input', function() {
       localStorage.setItem('gemini_model_custom', modelInput.value.trim());
     });
+  }
+  if (langSelect) {
+    const savedLang = localStorage.getItem('gemini_target_lang');
+    if (savedLang && selectValueIfExists(langSelect, savedLang)) {
+      langSelect.value = savedLang;
+    }
+    langSelect.addEventListener('change', function() {
+      localStorage.setItem('gemini_target_lang', langSelect.value);
+      restartGeminiLiveIfActive();
+    });
+  }
+  if (audioCheckbox) {
+    const savedAudioEnabled = localStorage.getItem('gemini_audio_enabled');
+    if (savedAudioEnabled !== null) {
+      audioCheckbox.checked = savedAudioEnabled === '1';
+      updateGeminiAudioEnabled(audioCheckbox);
+    }
   }
 })();
 
@@ -96,6 +154,7 @@ function updateGeminiLiveEnabled(checkbox) {
 
 // 「翻訳音声を再生」トグル。オフにしたら再生中・再生待ちの音声を即座に止める。
 function updateGeminiAudioEnabled(checkbox) {
+  localStorage.setItem('gemini_audio_enabled', checkbox.checked ? '1' : '0');
   if (!checkbox.checked && gemini_playback_ctx) {
     gemini_playback_ctx.close();
     gemini_playback_ctx = null;
@@ -112,6 +171,12 @@ async function startGeminiLive() {
 
   const targetLang = document.getElementById('select_gemini_live_lang').value;
   const model = getGeminiModel();
+  if (GEMINI_UNSUPPORTED_BIDI_MODELS.includes(model)) {
+    alert(model + ' は現在の Live Translate 接続では使えません。gemini-3.5-live-translate-preview に戻します。');
+    resetGeminiModelSelection(GEMINI_DEFAULT_MODEL);
+    document.getElementById('checkbox_gemini_live').checked = false;
+    return;
+  }
 
   // 通常の音声認識・読み上げを止める
   gemini_live_active = true;
@@ -191,6 +256,9 @@ async function startGeminiLive() {
       const detail = e.reason ? (e.code + ': ' + e.reason) : ('code ' + e.code);
       document.getElementById('status').innerHTML = "Gemini Live 切断 (" + detail + ")";
       document.getElementById('status').className = "error";
+      if (e.code === 1008 && model === 'models/gemini-live-2.5-flash-preview') {
+        resetGeminiModelSelection(GEMINI_DEFAULT_MODEL);
+      }
     }
   };
 }
@@ -367,7 +435,8 @@ function playGeminiAudioChunk(base64Data) {
 
 // ---- 終了処理 ----
 
-function stopGeminiLive() {
+function stopGeminiLive(options) {
+  const restartRecognition = !options || options.restartRecognition !== false;
   gemini_live_active = false;
 
   if (gemini_clear_timer) {
@@ -401,5 +470,5 @@ function stopGeminiLive() {
   document.getElementById('status').className = "error";
 
   // 通常の音声認識を再開する（main.js）
-  if (typeof vr_function === 'function') vr_function();
+  if (restartRecognition && typeof vr_function === 'function') vr_function();
 }
