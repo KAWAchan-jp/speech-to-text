@@ -74,7 +74,7 @@ function detectBrowser() {
  * @returns {boolean} ブラウザが音声認識をサポートすると自己申告していればtrue
  */
 function is_speech_recognition_supported() {
-  return window.SpeechRecognition || window.webkitSpeechRecognition != null;
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 }
 
 const browser = detectBrowser();
@@ -113,13 +113,37 @@ var lang = 'ja-JP';
 var last_finished = ''; // 最後に確定した部分。確定部分が瞬時に消えるのを防ぐためにここで定義。
 var textUpdateTimeoutID = 0;
 var textUpdateTimeoutSecond = 30; // 音声認識結果が更新されない場合にクリアするまでの秒数（0以下の場合は自動クリアしない）
+var recognitionRestartTimeoutID = 0;
+var recognitionActive = false;
+
+function restartRecognitionSoon(delayMs = 500) {
+  if (typeof gemini_live_active !== 'undefined' && gemini_live_active) return;
+  if (recognitionRestartTimeoutID) {
+    clearTimeout(recognitionRestartTimeoutID);
+  }
+  recognitionRestartTimeoutID = setTimeout(function() {
+    recognitionRestartTimeoutID = 0;
+    vr_function();
+  }, delayMs);
+}
 
 function vr_function() {
   // Gemini Live 翻訳が有効な間はWeb Speech認識を起動しない
   if (typeof gemini_live_active !== 'undefined' && gemini_live_active) return;
+  if (recognitionActive) return;
+  if (recognitionRestartTimeoutID) {
+    clearTimeout(recognitionRestartTimeoutID);
+    recognitionRestartTimeoutID = 0;
+  }
 
-  window.SpeechRecognition = window.SpeechRecognition || webkitSpeechRecognition;
-  recognition = new webkitSpeechRecognition();
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    document.getElementById('status').innerHTML = 'Google Chrome や Microsoft Edge のような音声認識対応ブラウザでアクセスしてください。';
+    document.getElementById('status').className = "error";
+    return;
+  }
+
+  recognition = new SpeechRecognition();
   recognition.lang = lang;
   recognition.interimResults = true;
   recognition.continuous = true;
@@ -132,16 +156,29 @@ function vr_function() {
     document.getElementById('status').innerHTML = "音声を認識できませんでした";
     document.getElementById('status').className = "error";
   };
-  recognition.onerror = function() {
-    document.getElementById('status').innerHTML = "エラー";
-    document.getElementById('status').className = "error";
-    if (flag_speech == 0)
-      vr_function();
+  recognition.onerror = function(event) {
+    const error = event && event.error;
+    if (error === 'no-speech' || error === 'aborted') {
+      document.getElementById('status').innerHTML = "待機中";
+      document.getElementById('status').className = "ready";
+    } else {
+      document.getElementById('status').innerHTML = error ? ("エラー: " + error) : "エラー";
+      document.getElementById('status').className = "error";
+      console.warn('Speech recognition error:', error || event);
+    }
+    if (flag_speech == 0) {
+      restartRecognitionSoon();
+    }
   };
   recognition.onsoundend = function() {
-    document.getElementById('status').innerHTML = "停止中";
-    document.getElementById('status').className = "error";
-    vr_function();
+    document.getElementById('status').innerHTML = "待機中";
+    document.getElementById('status').className = "ready";
+  };
+  recognition.onend = function() {
+    recognitionActive = false;
+    if (flag_speech == 0) {
+      restartRecognitionSoon();
+    }
   };
 
   recognition.onresult = function(event) {
@@ -212,7 +249,14 @@ function vr_function() {
   flag_speech = 0;
   document.getElementById('status').innerHTML = "待機中";
   document.getElementById('status').className = "ready";
-  recognition.start();
+  try {
+    recognition.start();
+    recognitionActive = true;
+  } catch (e) {
+    recognitionActive = false;
+    console.warn('Speech recognition start failed:', e);
+    restartRecognitionSoon(1000);
+  }
 }
 
 function updateTextClearSecond() {

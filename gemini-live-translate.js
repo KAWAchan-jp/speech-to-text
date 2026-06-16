@@ -16,6 +16,8 @@ var gemini_playback_ctx = null; // 翻訳音声の再生用 AudioContext（24kHz
 var gemini_playback_time = 0;   // 再生キューの次回開始時刻（チャンクを途切れなく繋げるため）
 var gemini_mic_stream = null;
 var gemini_pcm_buffer = [];     // 16kHzにダウンサンプリング済みでまだ送信していないサンプル
+var gemini_reconnect_timer = 0;
+var gemini_reconnecting = false;
 const GEMINI_SEND_CHUNK_SAMPLES = 1600; // 16kHz * 100ms分のサンプル数
 
 // 文字起こしは差分で届くため、ターンごとに連結して表示する
@@ -84,6 +86,37 @@ async function restartGeminiLiveIfActive() {
   if (!gemini_live_active) return;
   stopGeminiLive({ restartRecognition: false });
   await startGeminiLive();
+}
+
+function scheduleGeminiLiveReconnect(reason, delayMs = 1000) {
+  const checkbox = document.getElementById('checkbox_gemini_live');
+  const shouldReconnect = gemini_live_active || (checkbox && checkbox.checked);
+  if (!shouldReconnect || gemini_reconnect_timer) return;
+  console.warn('Gemini Live reconnect scheduled:', reason);
+  gemini_live_active = true;
+  gemini_reconnecting = true;
+  document.getElementById('status').innerHTML = "Gemini Live 再接続中...";
+  document.getElementById('status').className = "processing";
+  closeGeminiLiveConnection();
+  gemini_reconnect_timer = setTimeout(async function() {
+    gemini_reconnect_timer = 0;
+    gemini_reconnecting = false;
+    if (checkbox && !checkbox.checked) {
+      gemini_live_active = false;
+      return;
+    }
+    await startGeminiLive();
+  }, delayMs);
+}
+
+function isGeminiGoAwayClose(event) {
+  const reason = (event && event.reason ? event.reason : '').toLowerCase();
+  return event && (
+    reason.includes('goaway') ||
+    reason.includes('go away') ||
+    reason.includes('session durat') ||
+    reason.includes('failed to close the connection')
+  );
 }
 
 function updateGeminiModelSelection(select) {
@@ -257,6 +290,10 @@ async function startGeminiLive() {
       console.warn('Gemini Live: 解析できないメッセージ', text);
       return;
     }
+    if (response.goAway) {
+      scheduleGeminiLiveReconnect('goAway');
+      return;
+    }
     handleGeminiMessage(response);
   };
 
@@ -268,6 +305,11 @@ async function startGeminiLive() {
 
   gemini_ws.onclose = (e) => {
     console.error('Gemini Live WebSocket切断', 'code=' + e.code, 'reason=' + e.reason);
+    if (gemini_reconnecting) return;
+    if (isGeminiGoAwayClose(e)) {
+      scheduleGeminiLiveReconnect(e.reason || 'goAway close');
+      return;
+    }
     if (gemini_live_active) {
       const detail = e.reason ? (e.code + ': ' + e.reason) : ('code ' + e.code);
       document.getElementById('status').innerHTML = "Gemini Live 切断 (" + detail + ")";
@@ -451,18 +493,11 @@ function playGeminiAudioChunk(base64Data) {
 
 // ---- 終了処理 ----
 
-function stopGeminiLive(options) {
-  const restartRecognition = !options || options.restartRecognition !== false;
-  gemini_live_active = false;
-  setGoogleTranslateUiEnabled(true);
-
-  if (gemini_clear_timer) {
-    clearTimeout(gemini_clear_timer);
-    gemini_clear_timer = 0;
-  }
-
+function closeGeminiLiveConnection() {
   if (gemini_ws) {
-    gemini_ws.close();
+    if (gemini_ws.readyState === WebSocket.OPEN || gemini_ws.readyState === WebSocket.CONNECTING) {
+      gemini_ws.close(1000, 'client reconnect');
+    }
     gemini_ws = null;
   }
   if (gemini_audio_ctx) {
@@ -480,6 +515,25 @@ function stopGeminiLive(options) {
     gemini_mic_stream = null;
   }
   gemini_pcm_buffer = [];
+}
+
+function stopGeminiLive(options) {
+  const restartRecognition = !options || options.restartRecognition !== false;
+  gemini_live_active = false;
+  gemini_reconnecting = false;
+  setGoogleTranslateUiEnabled(true);
+
+  if (gemini_reconnect_timer) {
+    clearTimeout(gemini_reconnect_timer);
+    gemini_reconnect_timer = 0;
+  }
+
+  if (gemini_clear_timer) {
+    clearTimeout(gemini_clear_timer);
+    gemini_clear_timer = 0;
+  }
+
+  closeGeminiLiveConnection();
 
   document.getElementById('result_text').innerHTML = '';
   document.getElementById('result_text_en').innerHTML = '';
