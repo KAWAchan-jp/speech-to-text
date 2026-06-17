@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>  
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@700&family=BIZ+UDPMincho&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?ver=202606171200" type="text/css" media="screen">
+  <link rel="stylesheet" href="style.css?ver=202606171410" type="text/css" media="screen">
   <link rel="manifest" href="manifest.json">
 </head>
 
@@ -52,6 +52,10 @@
       <input class="checkboxes" id="checkbox_controls" type="checkbox" checked><label class="checkboxes_label" for="checkbox_controls">詳細設定を表示</label>
       <input class="checkboxes" id="checkbox_log" type="checkbox" checked><label class="checkboxes_label" for="checkbox_log">認識結果のログを表示</label>
       <div class="controls_wrapper control_wrapper_row">
+        <div class="translate_columns">
+        <!-- 左: 通常のGoogle翻訳に関する設定 -->
+        <div class="translate_column">
+        <div class="control_column_header">通常翻訳（Google）</div>
         <div class="control_selector_wrapper">
           音声認識<a href="https://github.com/KAWAchan-jp/speech-to-text#他の言語を認識したい" target="_blank">[?]</a>:
           <select id="select_language" class="selector" onchange="updateCountry()"></select>
@@ -62,7 +66,9 @@
         </div>
         <div class="control_selector_wrapper">
           <label for="checkbox_tts">翻訳読み上げ</label>: <input type="checkbox" id="checkbox_tts" name="checkbox_tts" oninput="updateTtsEnabled(this)">
+          <br>
           <span class="selector">声: <select id="select_tts_voice" class="selector"></select></span>
+          <br>
           <span class="selector">速さ:
             <select id="select_tts_rate" class="selector">
               <option value="0.75">0.75</option>
@@ -74,7 +80,11 @@
           </span>
           <div class="help_text tts_help_text">*読み上げ中は音声認識を一時停止します。スピーカー使用時は読み上げ音声をマイクが拾うため、ヘッドホンの使用をおすすめします。</div>
         </div>
+        </div><!-- /左カラム -->
 
+        <!-- 右: Gemini Live 翻訳に関する設定 -->
+        <div class="translate_column">
+        <div class="control_column_header">Gemini Live 翻訳（実験的）</div>
         <!-- Gemini Live APIによる音声→音声リアルタイム翻訳 -->
         <div class="control_selector_wrapper gemini_live_controls">
           <label for="checkbox_gemini_live">Gemini Live 翻訳</label>: <input type="checkbox" id="checkbox_gemini_live" name="checkbox_gemini_live" oninput="updateGeminiLiveEnabled(this)">
@@ -84,7 +94,7 @@
             <span class="gemini_vad_meter"><span class="gemini_vad_meter_fill"></span></span>
           </span>
           <div class="gemini_live_grid">
-            <label class="gemini_live_field" for="select_gemini_model">
+            <label class="gemini_live_field gemini_full_row" for="select_gemini_model">
               <span>モデル</span>
               <select id="select_gemini_model" onchange="updateGeminiModelSelection(this)">
                 <option value="models/gemini-3.5-live-translate-preview">gemini-3.5-live-translate-preview</option>
@@ -96,7 +106,7 @@
               <span>カスタム</span>
               <input type="text" id="input_gemini_model" placeholder="models/..." autocomplete="off">
             </label>
-            <label class="gemini_live_field" for="select_gemini_live_lang">
+            <label class="gemini_live_field gemini_full_row" for="select_gemini_live_lang">
               <span>翻訳先</span>
               <select id="select_gemini_live_lang">
                 <option value="en">English</option>
@@ -125,6 +135,8 @@
           </div>
           <div class="help_text gemini_help_text">*有効化中は通常の音声認識・ページ翻訳・読み上げは停止します。モデル名はGemini Live API対応モデルを選ぶか、カスタム欄に入力してください。翻訳音声オン時にスピーカーを使うとループしやすいため、ヘッドホンを推奨します。APIキー欄が空のときは gemini-live-translate.config.js の値を使います。</div>
         </div>
+        </div><!-- /右カラム -->
+        </div><!-- /translate_columns -->
 
         <div class="control_selector_wrapper">
           <input type="button" value="外観の設定 表示/非表示" onclick="toggleClass('appearance_wrapper','folded')">
@@ -301,7 +313,7 @@
           API</a> を利用しています。<br /> カメラやマイクが機能しないとき → ページの再読み込みや，ブラウザの設定を確認してください: <a href="https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=ja&oco=1">Chrome ヘルプ</a><br> 「ログをダウンロード」でダウンロードされるファイルは，アクセスしているユーザーのブラウザで生成されています。
       </div>
       <!-- アプリのバージョン番号（修正のたびに4桁目をインクリメントする） -->
-      <div id="app_version" class="help_text" style="text-align: right; opacity: 0.6;">v1.2.0</div>
+      <div id="app_version" class="help_text" style="text-align: right; opacity: 0.6;">v1.2.3</div>
     </div>
   </div>
   <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>

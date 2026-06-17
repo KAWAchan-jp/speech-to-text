@@ -408,6 +408,38 @@ select {
 	text-align: center;
 }
 
+/* 通常翻訳(Google)とGemini Live翻訳を左右2カラムに分けるレイアウト */
+.translate_columns {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1.5rem;
+	flex: 0 0 100%;
+	max-width: 100%;
+}
+
+.translate_column {
+	flex: 1 1 360px;
+	min-width: 0;
+	box-sizing: border-box;
+	padding: 0.6rem 1rem 1rem;
+	border: solid 1px #555;
+	border-radius: 4px;
+}
+
+/* カラム内は左揃えに統一する（中央揃えの.control_selector_wrapperを上書き） */
+.translate_column .control_selector_wrapper {
+	text-align: left;
+	margin-top: 0.6rem;
+}
+
+.control_column_header {
+	font-size: 90%;
+	color: #aaa;
+	padding-bottom: 0.3rem;
+	margin-bottom: 0.2rem;
+	border-bottom: 1px solid #444;
+}
+
 .gemini_live_controls {
 	text-align: left;
 }
@@ -466,7 +498,7 @@ select {
 
 .gemini_live_grid {
 	display: grid;
-	grid-template-columns: minmax(14rem, 1.5fr) minmax(9rem, 1fr) auto minmax(15rem, 1.4fr);
+	grid-template-columns: 1fr 1fr;
 	gap: 0.5rem 0.75rem;
 	align-items: end;
 }
@@ -510,9 +542,14 @@ select {
 	min-width: 0;
 }
 
+/* グリッド内で単独の行にしたい項目（モデル・翻訳先など） */
+.gemini_full_row {
+	grid-column: 1 / -1;
+}
+
 .gemini_model_custom {
 	display: none;
-	grid-column: 1 / 3;
+	grid-column: 1 / -1;
 }
 
 .gemini_live_check {
@@ -524,7 +561,7 @@ select {
 }
 
 .gemini_api_key {
-	grid-column: 4 / 5;
+	grid-column: 1 / -1;
 }
 
 .gemini_help_text {
@@ -533,14 +570,9 @@ select {
 	opacity: 0.75;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 560px) {
 	.gemini_live_grid {
-		grid-template-columns: 1fr 1fr;
-	}
-
-	.gemini_model_custom,
-	.gemini_api_key {
-		grid-column: 1 / -1;
+		grid-template-columns: 1fr;
 	}
 }
 
