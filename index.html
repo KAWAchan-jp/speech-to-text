@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>  
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@700&family=BIZ+UDPMincho&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?ver=202606162350" type="text/css" media="screen">
+  <link rel="stylesheet" href="style.css?ver=202606171200" type="text/css" media="screen">
   <link rel="manifest" href="manifest.json">
 </head>
 
@@ -27,7 +27,6 @@
     <!-- notranslate: 翻訳対象は字幕(#result_text_en)のみとし、UI部分はページ翻訳から除外する -->
     <div class="notranslate">
       <div id="status" class="error">起動中...</div>
-      <div id="status_kuromoji_loading" class="hidden"></div>
     </div>
 
     <div id="video_wrapper" class="video_wrapper">
@@ -36,7 +35,10 @@
         <div id="text_bg" class="text_bg"></div>
         <div id="result_text_container" class="text_area">
           <div id="result_text" class="notranslate">音声認識が始まるとここに文字が表示されます。マイクとカメラを有効にしてください。</div>
-          <div id="result_text_en" class="result_text_en"></div>
+          <!-- notranslate: 翻訳は自前で行うためGoogleウィジェットには触らせない（言語選択UIとしてのみ使う） -->
+          <div id="result_text_en" class="result_text_en notranslate"></div>
+          <!-- Gemini Live翻訳の表示専用。notranslateでGoogle翻訳に触らせず、result_text_enの翻訳状態を壊さない -->
+          <div id="result_text_gemini" class="result_text_en notranslate" style="display:none"></div>
         </div>
       </div>
       <img alt="FullScreen" src="fullscreen.svg" id="FullScreenBtn" class="FullScreenBtn" width="20" height="20" style="display:block">
@@ -54,9 +56,7 @@
           音声認識<a href="https://github.com/KAWAchan-jp/speech-to-text#他の言語を認識したい" target="_blank">[?]</a>:
           <select id="select_language" class="selector" onchange="updateCountry()"></select>
           <select id="select_dialect" class="selector" onchange="updateLanguage()"></select>
-          <span id="checkbox_hiragana_wrapper" class="selector">
-          <label for="checkbox_hiragana">ひらがな</label><a href="https://github.com/KAWAchan-jp/speech-to-text#ひらがなで表示したい" target="_blank">[?]</a>: <input type="checkbox" id="checkbox_hiragana" name="checkbox_hiragana" value="hiragana" oninput="initKuromoji(this)">
-        </span> 翻訳
+          翻訳
           <a href="https://github.com/KAWAchan-jp/speech-to-text#自動で翻訳したい" target="_blank">[?]</a>:
           <div id="google_translate_element" class="select_translation selector"></div>
         </div>
@@ -78,6 +78,11 @@
         <!-- Gemini Live APIによる音声→音声リアルタイム翻訳 -->
         <div class="control_selector_wrapper gemini_live_controls">
           <label for="checkbox_gemini_live">Gemini Live 翻訳</label>: <input type="checkbox" id="checkbox_gemini_live" name="checkbox_gemini_live" oninput="updateGeminiLiveEnabled(this)">
+          <span id="gemini_vad_indicator" class="gemini_vad_indicator" title="マイク入力の送信状態（無音時はAPIに送らずコストを抑えます）">
+            <span class="gemini_vad_dot"></span>
+            <span class="gemini_vad_label">待機中</span>
+            <span class="gemini_vad_meter"><span class="gemini_vad_meter_fill"></span></span>
+          </span>
           <div class="gemini_live_grid">
             <label class="gemini_live_field" for="select_gemini_model">
               <span>モデル</span>
@@ -101,6 +106,13 @@
                 <option value="zh">中文</option>
                 <option value="id">Bahasa Indonesia</option>
               </select>
+            </label>
+            <label class="gemini_live_field" for="slider_gemini_sensitivity">
+              <span>マイク感度</span>
+              <span class="gemini_sensitivity_row">
+                <input type="range" id="slider_gemini_sensitivity" min="1" max="10" step="1" value="6" oninput="updateGeminiSensitivity(this)" title="左=鈍感（雑音を拾いにくい/送信が減る）、右=敏感（小さな声も拾う）">
+                <span id="value_gemini_sensitivity" class="gemini_sensitivity_value">6</span>
+              </span>
             </label>
             <label class="gemini_live_check" for="checkbox_gemini_audio">
               <input type="checkbox" id="checkbox_gemini_audio" name="checkbox_gemini_audio" checked oninput="updateGeminiAudioEnabled(this)">
@@ -289,17 +301,16 @@
           API</a> を利用しています。<br /> カメラやマイクが機能しないとき → ページの再読み込みや，ブラウザの設定を確認してください: <a href="https://support.google.com/chrome/answer/2693767?co=GENIE.Platform%3DDesktop&hl=ja&oco=1">Chrome ヘルプ</a><br> 「ログをダウンロード」でダウンロードされるファイルは，アクセスしているユーザーのブラウザで生成されています。
       </div>
       <!-- アプリのバージョン番号（修正のたびに4桁目をインクリメントする） -->
-      <div id="app_version" class="help_text" style="text-align: right; opacity: 0.6;">v1.1.2</div>
+      <div id="app_version" class="help_text" style="text-align: right; opacity: 0.6;">v1.2.0</div>
     </div>
   </div>
   <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" defer></script>
-  <script src="kuromoji/build/kuromoji.js" defer></script>
   <!-- Chrome で MediaDevices.enumerateDevices() を動かすためのpolyfill -->
   <script src="https://webrtc.github.io/adapter/adapter-latest.js" defer></script>
-  <script src="./main.js?v=202606162100" defer></script>
+  <script src="./main.js?v=202606171200" defer></script>
   <!-- Gemini Live 翻訳（実験的機能）。config.jsはAPIキー設定用で.gitignore対象（無くてもエラーにはならない） -->
   <script src="./gemini-live-translate.config.js" defer></script>
-  <script src="./gemini-live-translate.js?v=202606162115" defer></script>
+  <script src="./gemini-live-translate.js?v=202606171200" defer></script>
 </body>
 
 </html>

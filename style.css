@@ -171,8 +171,7 @@ a:active {
 	padding: 1rem 1.5rem;
 }
 
-#status,
-#status_kuromoji_loading {
+#status {
 	box-sizing: border-box;
 	background-color: #000e16;
 	display: inline-block;
@@ -418,6 +417,53 @@ select {
 	margin-bottom: 0.5rem;
 }
 
+/* VAD（マイク送信状態）インジケータ */
+.gemini_vad_indicator {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	margin-left: 0.6rem;
+	font-size: 0.85em;
+	color: #bbb;
+	vertical-align: middle;
+}
+
+.gemini_vad_dot {
+	width: 0.7em;
+	height: 0.7em;
+	border-radius: 50%;
+	background: #555; /* 既定（待機中）はグレー */
+	transition: background 0.1s linear;
+}
+
+/* 無音でスキップ中 */
+.gemini_vad_indicator.idle .gemini_vad_dot {
+	background: #555;
+}
+
+/* 発話を検知して送信中 */
+.gemini_vad_indicator.sending .gemini_vad_dot {
+	background: #4caf50;
+	box-shadow: 0 0 0.4em #4caf50;
+}
+
+.gemini_vad_meter {
+	display: inline-block;
+	width: 4rem;
+	height: 0.5em;
+	background: #333;
+	border-radius: 0.25em;
+	overflow: hidden;
+}
+
+.gemini_vad_meter_fill {
+	display: block;
+	width: 0%;
+	height: 100%;
+	background: #4caf50;
+	transition: width 0.08s linear;
+}
+
 .gemini_live_grid {
 	display: grid;
 	grid-template-columns: minmax(14rem, 1.5fr) minmax(9rem, 1fr) auto minmax(15rem, 1.4fr);
@@ -437,6 +483,24 @@ select {
 .gemini_live_check span {
 	color: #bbb;
 	white-space: nowrap;
+}
+
+/* マイク感度スライダーと数値表示 */
+.gemini_sensitivity_row {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+}
+
+.gemini_sensitivity_row input[type="range"] {
+	flex: 1;
+	min-width: 0;
+}
+
+.gemini_sensitivity_value {
+	min-width: 1.5em;
+	text-align: right;
+	color: #ddd;
 }
 
 .gemini_live_field select,
@@ -568,15 +632,3 @@ select {
 	transform: scale(-1, 1);
 }
 
-.loading_hiragana {
-	position: absolute;
-	width: 100%;
-	height: 100%;
-	top: 0;
-	left: 0;
-	transition: all 0.3s;
-	font-size: 24px;
-	margin: 2rem;
-	/* text-align: center; */
-	vertical-align: middle;
-}

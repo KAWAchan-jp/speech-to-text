@@ -105,6 +105,10 @@ function selectValueIfExists(select, value) {
   return result;
 }
 
+// 保存済み設定（localStorage）。各種関数より先に初期化する必要があるため先頭で宣言する。
+// （speechSynthesis.onvoiceschanged等が読み込み中に早期発火し、configを参照することがあるため）
+const config = JSON.parse(localStorage.speech_to_text_config || '{}');
+
 // 音声認識
 // 参考: https://jellyware.jp/kurage/iot/webspeechapi.html
 var flag_speech = 0;
@@ -231,16 +235,12 @@ function vr_function() {
       }
     }
 
-    var displayText;
-    if (document.getElementById('checkbox_hiragana').checked && lang == 'ja-JP') {
-      displayText = [resultToHiragana(last_finished), resultToHiragana(current_transcripts)].join('<br>');
-    } else {
-      displayText = [last_finished, current_transcripts].join('<br>');
-    }
+    var displayText = [last_finished, current_transcripts].join('<br>');
     document.getElementById('result_text').innerHTML = displayText;
-    document.getElementById('result_text_en').innerHTML = displayText;
-    // 翻訳前の原文を記録する（MutationObserver側で「翻訳がまだ済んでいない」状態を判定するため）
-    tts_original_text = getFirstLineText(document.getElementById('result_text_en'));
+    // 翻訳前の原文を記録する（TTS側で「まだ翻訳されていない＝原文のまま」を判定するため）
+    tts_original_text = (last_finished || '').trim();
+    // 翻訳はGoogleウィジェットが動的字幕を訳さなくなったため、自前で翻訳して表示する
+    scheduleSubtitleTranslation(last_finished, current_transcripts);
     setTimeoutForClearText();
 
     if (need_reset) { vr_function(); }
@@ -600,16 +600,6 @@ function updateLanguage() {
   if (flag_recognition_stopped) {
     vr_function();
   }
-
-  var el_status_kuromoji_loading = document.getElementById('status_kuromoji_loading');
-  var el_checkbox_hiragana = document.getElementById('checkbox_hiragana_wrapper');
-  if (lang == 'ja-JP') {
-    el_status_kuromoji_loading.style.display = "inline-block";
-    el_checkbox_hiragana.style.display = "inline";
-  } else {
-    el_status_kuromoji_loading.style.display = "none";
-    el_checkbox_hiragana.style.display = "none";
-  }
 }
 
 // 結果の翻訳機能を追加
@@ -656,6 +646,60 @@ function getTranslationTargetLang() {
   const match = document.cookie.match(/googtrans=\/[^\/;]*\/([^;]+)/);
   if (match) return decodeURIComponent(match[1]);
   return 'en';
+}
+
+// ---- 自前翻訳 ----
+// Google翻訳ウィジェット（新方式）は、後から追加された字幕を自動翻訳しなくなったため、
+// 確定/暫定の認識テキストを翻訳エンドポイントで自前翻訳し、#result_text_en に表示する。
+// ウィジェットは翻訳先言語の選択UIとしてのみ使う（getTranslationTargetLangで取得）。
+var translationDebounceTimer = 0;
+var translationSeq = 0; // 古いレスポンスが新しい表示を上書きしないための通し番号
+
+// 認識テキスト（確定＋暫定）の翻訳をデバウンスして実行する
+function scheduleSubtitleTranslation(finalText, interimText) {
+  const target = getTranslationTargetLang();
+  const source = (lang || '').split('-')[0].toLowerCase();
+  const elEn = document.getElementById('result_text_en');
+  // 翻訳先が未選択、または原文と同じ言語なら翻訳せず原文をそのまま表示する
+  if (!target || target.toLowerCase().split('-')[0] === source) {
+    elEn.innerHTML = [finalText, interimText].join('<br>');
+    return;
+  }
+  if (translationDebounceTimer) clearTimeout(translationDebounceTimer);
+  translationDebounceTimer = setTimeout(function() {
+    translationDebounceTimer = 0;
+    translateSubtitle(finalText, interimText, source, target);
+  }, 300);
+}
+
+async function translateSubtitle(finalText, interimText, source, target) {
+  const seq = ++translationSeq;
+  const lines = [];
+  for (const t of [finalText, interimText]) {
+    const trimmed = (t || '').trim();
+    if (!trimmed) { lines.push(''); continue; }
+    try {
+      lines.push(await translateText(trimmed, source, target));
+    } catch (e) {
+      console.warn('翻訳に失敗しました:', e);
+      lines.push(trimmed); // 失敗時は原文を表示
+    }
+  }
+  if (seq !== translationSeq) return; // より新しい翻訳が走っているので破棄する
+  document.getElementById('result_text_en').innerHTML = lines.join('<br>');
+}
+
+// 無料の翻訳エンドポイント（APIキー不要・CORS許可あり）で1文を翻訳する
+async function translateText(text, sl, tl) {
+  const url = 'https://translate.googleapis.com/translate_a/single?client=gtx'
+    + '&sl=' + encodeURIComponent(sl || 'auto')
+    + '&tl=' + encodeURIComponent(tl)
+    + '&dt=t&q=' + encodeURIComponent(text);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+  // data[0] は翻訳セグメントの配列。各 seg[0]（訳文）を連結する
+  return (data[0] || []).map(seg => seg[0]).join('');
 }
 
 // 翻訳先言語に合う音声だけを「声」セレクタに反映する
@@ -768,9 +812,6 @@ for (var i = 0; i < fonts_custom.length; i++) {
 // デフォルトの言語を設定
 select_font.selectedIndex = 0;
 
-// 初期設定
-const config = JSON.parse(localStorage.speech_to_text_config || '{}');
-
 function initConfig() {
   function triggerEvent(type, elem) {
     const ev = document.createEvent('HTMLEvents');
@@ -818,7 +859,6 @@ function initConfig() {
   ['checkbox_controls',
     'checkbox_log',
     'checkbox_timestamp',
-    'checkbox_hiragana',
     'checkbox_tts'
   ].forEach(id => {
     const el = document.getElementById(id);
@@ -891,48 +931,4 @@ function updateConfigValue() {
 function deleteConfig() {
   localStorage.removeItem('speech_to_text_config');
   location.reload();
-}
-
-// 形態素解析
-let kuromojiObj;
-
-function initKuromoji(checkbox) {
-  if (checkbox.checked == true && kuromojiObj == undefined) {
-    document.getElementById('status_kuromoji_loading').innerHTML = "ひらがなデータ読み込み中...";
-    document.getElementById('status_kuromoji_loading').className = "processing";
-    kuromoji.builder({
-      dicPath: "kuromoji/dict/"
-    }).build(function(err, tokenizer) {
-      kuromojiObj = tokenizer
-      document.getElementById('status_kuromoji_loading').innerHTML = "ひらがなデータ読み込み完了";
-      document.getElementById('status_kuromoji_loading').className = "ready";
-    });
-  }
-}
-
-// 結果をひらがなにする
-function resultToHiragana(text) {
-  if (text == null || text.length === 0) return '';
-  if (kuromojiObj == undefined) {
-    return text;
-  }
-  var kuromoji_result = kuromojiObj.tokenize(text);
-  var result_hiragana = '';
-  for (var i = 0; i < kuromoji_result.length; i++) {
-    if (kuromoji_result[i].word_type == "KNOWN") {
-      result_hiragana += kuromoji_result[i].reading;
-    } else {
-      result_hiragana += kuromoji_result[i].surface_form;
-    }
-  }
-  return katakanaToHiragana(result_hiragana);
-}
-
-// カタカナをひらがなにする
-// 参考: https://gist.github.com/kawanet/5553478
-function katakanaToHiragana(src) {
-  return src.replace(/[\u30a1-\u30f6]/g, function(match) {
-    var chr = match.charCodeAt(0) - 0x60;
-    return String.fromCharCode(chr);
-  });
 }

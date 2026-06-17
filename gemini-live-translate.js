@@ -19,6 +19,18 @@ var gemini_pcm_buffer = [];     // 16kHzにダウンサンプリング済みで�
 var gemini_reconnect_timer = 0;
 var gemini_reconnecting = false;
 const GEMINI_SEND_CHUNK_SAMPLES = 1600; // 16kHz * 100ms分のサンプル数
+const GEMINI_HANGOVER_SAMPLES = 16000; // 発話後この分(16kHz=1秒)は無音でも送り続け、語尾を保持する
+// RMSがこの値未満なら無音と判定して送信しない。マイク感度スライダーで変更できる。
+// 大きいほど鈍感（大きい声でないと拾わない）。デフォルトは少し鈍感めに設定。
+var gemini_vad_threshold = 0.003;
+const GEMINI_SENSITIVITY_DEFAULT = 6; // 感度スライダー(1=鈍感〜10=敏感)の初期値
+
+// 感度スライダーの値(1〜10)を実際のRMS閾値に変換する。
+// 10(敏感)=0.0008、1(鈍感)=0.006 の範囲で線形補間する。
+function geminiSensitivityToThreshold(s) {
+  const v = Math.max(1, Math.min(10, Number(s) || GEMINI_SENSITIVITY_DEFAULT));
+  return 0.0008 + (10 - v) * (0.006 - 0.0008) / 9;
+}
 
 // 文字起こしは差分で届くため、ターンごとに連結して表示する
 var gemini_input_acc = '';   // 原文（認識）の累積
@@ -66,9 +78,67 @@ function setGoogleTranslateUiEnabled(enabled) {
     wrapper.setAttribute('aria-disabled', enabled ? 'false' : 'true');
     wrapper.title = enabled ? '' : 'Gemini Live 翻訳が有効な間は Google 翻訳を変更できません';
   }
-  const combo = document.querySelector('.goog-te-combo');
-  if (combo) {
-    combo.disabled = !enabled;
+  // combo.disabled は使わない。disabled=true にすると Google Translate の
+  // 内部翻訳エンジンが停止し、false に戻しても自動では再起動しないため。
+  // マウス操作の防止は disabled_control の pointer-events: none で対応する。
+}
+
+// Gemini Live中はGoogle翻訳の対象要素(result_text_en)に一切触れないようにする。
+//
+// 新しいGoogle翻訳ウィジェットは <select class="goog-te-combo"> を生成せず
+// （リンク＋メニュー方式）、JSから翻訳のON/OFFや再起動ができない。そこで
+// 「result_text_enをGemini中に書き換えない」ことでGoogleの翻訳トラッキングを
+// 壊さず保持する。Geminiの翻訳表示はnotranslateな専用要素(result_text_gemini)に
+// 出し、result_text_enは隠すだけにする。これでOFF後は通常翻訳がそのまま継続する。
+function suspendGoogleTranslate() {
+  const en = document.getElementById('result_text_en');
+  const gem = document.getElementById('result_text_gemini');
+  if (en) en.style.display = 'none';
+  if (gem) { gem.innerHTML = ''; gem.style.display = ''; }
+}
+
+// Gemini Live停止時にGemini専用表示を隠し、通常のresult_text_en表示へ戻す。
+// result_text_enはGemini中に変更していないため、Google翻訳は継続したまま。
+function resumeGoogleTranslate() {
+  const en = document.getElementById('result_text_en');
+  const gem = document.getElementById('result_text_gemini');
+  if (gem) { gem.innerHTML = ''; gem.style.display = 'none'; }
+  if (en) en.style.display = '';
+}
+
+// マイク感度スライダーから呼ばれる。閾値を更新し、稼働中ならワークレットへ反映する。
+function updateGeminiSensitivity(slider) {
+  gemini_vad_threshold = geminiSensitivityToThreshold(slider.value);
+  localStorage.setItem('gemini_sensitivity', slider.value);
+  const valEl = document.getElementById('value_gemini_sensitivity');
+  if (valEl) valEl.textContent = slider.value;
+  // AudioWorklet稼働中ならリアルタイムに閾値を送る（フォールバックは変数を直接参照）
+  if (gemini_audio_ctx && gemini_audio_ctx._gemini_worklet_node) {
+    gemini_audio_ctx._gemini_worklet_node.port.postMessage({ type: 'config', threshold: gemini_vad_threshold });
+  }
+}
+
+// VAD（マイク送信状態）インジケータを更新する。
+// sending=true: 発話を検知してAPIに送信中（緑）、false: 無音でスキップ中（グレー）。
+// state省略時（停止時など）は待機表示に戻す。
+function updateGeminiVadIndicator(sending, rms) {
+  const el = document.getElementById('gemini_vad_indicator');
+  if (!el) return;
+  const label = el.querySelector('.gemini_vad_label');
+  const fill = el.querySelector('.gemini_vad_meter_fill');
+  if (sending === undefined) {
+    el.classList.remove('sending', 'idle');
+    if (label) label.textContent = '待機中';
+    if (fill) fill.style.width = '0%';
+    return;
+  }
+  el.classList.toggle('sending', sending);
+  el.classList.toggle('idle', !sending);
+  if (label) label.textContent = sending ? '送信中' : '無音';
+  // RMSは概ね0〜0.1程度。視認しやすいよう適当に拡大してバー表示する
+  if (fill) {
+    const level = Math.min(100, Math.round((rms || 0) * 800));
+    fill.style.width = level + '%';
   }
 }
 
@@ -187,6 +257,15 @@ function updateGeminiModelSelection(select) {
       updateGeminiAudioEnabled(audioCheckbox);
     }
   }
+  // マイク感度スライダーの復元（保存値がなければデフォルト）
+  const sensSlider = document.getElementById('slider_gemini_sensitivity');
+  if (sensSlider) {
+    const savedSens = localStorage.getItem('gemini_sensitivity');
+    sensSlider.value = (savedSens !== null) ? savedSens : GEMINI_SENSITIVITY_DEFAULT;
+    gemini_vad_threshold = geminiSensitivityToThreshold(sensSlider.value);
+    const valEl = document.getElementById('value_gemini_sensitivity');
+    if (valEl) valEl.textContent = sensSlider.value;
+  }
   setGoogleTranslateUiEnabled(!gemini_live_active);
 })();
 
@@ -228,6 +307,7 @@ async function startGeminiLive() {
   // 通常の音声認識・読み上げを止める
   gemini_live_active = true;
   setGoogleTranslateUiEnabled(false);
+  suspendGoogleTranslate(); // Google翻訳を原文表示にして一時停止（Geminiとの競合を防ぐ）
   gemini_input_acc = '';
   gemini_output_acc = '';
   gemini_turn_done = false;
@@ -251,7 +331,7 @@ async function startGeminiLive() {
   gemini_ws = new WebSocket(url);
   gemini_ws.binaryType = 'arraybuffer'; // サーバーはBinaryフレームでJSONを返す
 
-  gemini_ws.onopen = () => {
+  gemini_ws.onopen = async () => {
     gemini_ws.send(JSON.stringify({
       setup: {
         model: model,
@@ -267,7 +347,7 @@ async function startGeminiLive() {
         outputAudioTranscription: {}
       }
     }));
-    startGeminiAudioCapture();
+    await startGeminiAudioCapture();
     document.getElementById('status').innerHTML = "Gemini Live 翻訳中...";
     document.getElementById('status').className = "ready";
   };
@@ -341,7 +421,8 @@ function handleGeminiMessage(response) {
   }
   if (content.outputTranscription && content.outputTranscription.text) {
     gemini_output_acc += content.outputTranscription.text;
-    document.getElementById('result_text_en').innerHTML = gemini_output_acc;
+    // result_text_enには触れない（Google翻訳の状態を保持するため）。専用要素に表示する
+    document.getElementById('result_text_gemini').innerHTML = gemini_output_acc;
   }
   // 字幕が更新されたら「自動消去」のタイマーを引き直す
   if (hasTranscript) {
@@ -375,7 +456,8 @@ function geminiSetClearTimer() {
   if (sec <= 0) return;
   gemini_clear_timer = setTimeout(function() {
     document.getElementById('result_text').innerHTML = '';
-    document.getElementById('result_text_en').innerHTML = '';
+    // Gemini中はresult_text_enに触れないため、専用要素を消す
+    document.getElementById('result_text_gemini').innerHTML = '';
     gemini_input_acc = '';
     gemini_output_acc = '';
     gemini_turn_done = false;
@@ -385,17 +467,57 @@ function geminiSetClearTimer() {
 
 // ---- マイク音声のキャプチャ・16kHz PCM16への変換・送信 ----
 
-function startGeminiAudioCapture() {
+// AudioWorkletで音声処理する（メインスレッドをブロックしない）。
+// AudioWorklet非対応の場合はScriptProcessorNodeで代替する。
+async function startGeminiAudioCapture() {
   gemini_audio_ctx = new (window.AudioContext || window.webkitAudioContext)();
   const source = gemini_audio_ctx.createMediaStreamSource(gemini_mic_stream);
-  // ScriptProcessorNodeは非推奨だが、実装を単一ファイルで完結させるためここでは使用する
+  gemini_audio_ctx._gemini_source = source;
+
+  try {
+    await gemini_audio_ctx.audioWorklet.addModule('gemini-audio-worklet.js');
+    const workletNode = new AudioWorkletNode(gemini_audio_ctx, 'gemini-audio-processor');
+    // 現在のマイク感度（閾値）をワークレットへ渡す
+    workletNode.port.postMessage({ type: 'config', threshold: gemini_vad_threshold });
+    workletNode.port.onmessage = (e) => {
+      if (e.data instanceof ArrayBuffer) {
+        if (gemini_live_active) sendGeminiPcmBuffer(e.data);
+      } else if (e.data && e.data.type === 'vad') {
+        updateGeminiVadIndicator(e.data.sending, e.data.rms);
+      }
+    };
+    source.connect(workletNode);
+    workletNode.connect(gemini_audio_ctx.destination);
+    gemini_audio_ctx._gemini_worklet_node = workletNode;
+  } catch (e) {
+    console.warn('AudioWorklet不可、ScriptProcessorNodeで代替:', e);
+    startGeminiScriptProcessor(source);
+  }
+}
+
+// ScriptProcessorNodeによる代替実装（AudioWorklet非対応時のフォールバック）
+// ワークレット版と同じく、語尾を保持するためハングオーバーを設ける。
+function startGeminiScriptProcessor(source) {
   const processor = gemini_audio_ctx.createScriptProcessor(4096, 1, 1);
   gemini_pcm_buffer = [];
-
+  let hangover = 0; // 残り送信サンプル数（16kHz）
   processor.onaudioprocess = (e) => {
     if (!gemini_live_active) return;
     const input = e.inputBuffer.getChannelData(0);
+    let sum = 0;
+    for (let i = 0; i < input.length; i++) sum += input[i] * input[i];
+    const rms = Math.sqrt(sum / input.length);
     const downsampled = downsampleBuffer(input, gemini_audio_ctx.sampleRate, 16000);
+    if (rms >= gemini_vad_threshold) {
+      hangover = GEMINI_HANGOVER_SAMPLES; // 発話中
+      updateGeminiVadIndicator(true, rms);
+    } else if (hangover > 0) {
+      hangover -= downsampled.length;     // 発話直後の無音は語尾保持のため送る
+      updateGeminiVadIndicator(true, rms);
+    } else {
+      updateGeminiVadIndicator(false, rms);
+      return;                             // 続く無音は送らない（コスト節約）
+    }
     for (let i = 0; i < downsampled.length; i++) {
       gemini_pcm_buffer.push(downsampled[i]);
     }
@@ -404,12 +526,9 @@ function startGeminiAudioCapture() {
       sendGeminiAudioChunk(chunk);
     }
   };
-
   source.connect(processor);
-  // Chromeの仕様上、destinationに接続しないとonaudioprocessが発火しないことがある
   processor.connect(gemini_audio_ctx.destination);
-  gemini_audio_ctx._gemini_processor = processor; // 終了時に切断するため保持
-  gemini_audio_ctx._gemini_source = source;
+  gemini_audio_ctx._gemini_processor = processor;
 }
 
 // Float32の音声サンプル列を線形補間でリサンプリングする簡易実装
@@ -440,22 +559,29 @@ function floatTo16BitPCM(floatSamples) {
 }
 
 function arrayBufferToBase64(buffer) {
-  let binary = '';
-  const bytes = new Uint8Array(buffer);
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
-  }
-  return window.btoa(binary);
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
 }
 
 function sendGeminiAudioChunk(samples) {
   if (!gemini_ws || gemini_ws.readyState !== WebSocket.OPEN) return;
   const pcm = floatTo16BitPCM(samples);
-  const base64 = arrayBufferToBase64(pcm);
   gemini_ws.send(JSON.stringify({
     realtimeInput: {
       audio: {
-        data: base64,
+        data: arrayBufferToBase64(pcm),
+        mimeType: 'audio/pcm;rate=16000'
+      }
+    }
+  }));
+}
+
+// AudioWorkletから受け取ったInt16 ArrayBufferをWebSocketで送信する
+function sendGeminiPcmBuffer(int16Buffer) {
+  if (!gemini_ws || gemini_ws.readyState !== WebSocket.OPEN) return;
+  gemini_ws.send(JSON.stringify({
+    realtimeInput: {
+      audio: {
+        data: arrayBufferToBase64(int16Buffer),
         mimeType: 'audio/pcm;rate=16000'
       }
     }
@@ -501,6 +627,7 @@ function closeGeminiLiveConnection() {
     gemini_ws = null;
   }
   if (gemini_audio_ctx) {
+    if (gemini_audio_ctx._gemini_worklet_node) gemini_audio_ctx._gemini_worklet_node.disconnect();
     if (gemini_audio_ctx._gemini_processor) gemini_audio_ctx._gemini_processor.disconnect();
     if (gemini_audio_ctx._gemini_source) gemini_audio_ctx._gemini_source.disconnect();
     gemini_audio_ctx.close();
@@ -522,6 +649,7 @@ function stopGeminiLive(options) {
   gemini_live_active = false;
   gemini_reconnecting = false;
   setGoogleTranslateUiEnabled(true);
+  updateGeminiVadIndicator(); // インジケータを待機表示に戻す
 
   if (gemini_reconnect_timer) {
     clearTimeout(gemini_reconnect_timer);
@@ -539,6 +667,10 @@ function stopGeminiLive(options) {
   document.getElementById('result_text_en').innerHTML = '';
   document.getElementById('status').innerHTML = "停止中";
   document.getElementById('status').className = "error";
+
+  // Gemini Live中に付けていたnotranslateを外し、Google自動翻訳を再開させる。
+  // 直前にresult_text_enをクリア済みなので、以降の認識結果から通常どおり翻訳される。
+  resumeGoogleTranslate();
 
   // 通常の音声認識を再開する（main.js）
   if (restartRecognition && typeof vr_function === 'function') vr_function();
