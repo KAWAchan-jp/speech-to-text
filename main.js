@@ -740,7 +740,7 @@ if ('speechSynthesis' in window) {
 }
 
 // 翻訳先言語の切り替えを監視し、声リストを連動させる
-// （言語メニューはiframe内にありイベントで検知できないため、1秒ごとのポーリングで監視する）
+// （言語メニューはiframe内にありイベントで検知できないため、ポーリングで監視する）
 var tts_current_target = '';
 setInterval(function() {
   const target = getTranslationTargetLang();
@@ -750,7 +750,7 @@ setInterval(function() {
     tts_last_spoken = '';
     updateTtsVoiceList();
   }
-}, 1000);
+}, 3000);
 
 // 読み上げ中（または読み上げ待ち）かどうか
 function isTtsSpeaking() {
@@ -905,9 +905,18 @@ function initConfig() {
   document.querySelector('#select_tts_rate').addEventListener('change', updateConfigValue);
 }
 
+var _configSaveTimer = 0;
+function _saveConfig() {
+  if (_configSaveTimer) clearTimeout(_configSaveTimer);
+  _configSaveTimer = setTimeout(function() {
+    _configSaveTimer = 0;
+    localStorage.speech_to_text_config = JSON.stringify(config);
+  }, 300);
+}
+
 function updateConfig(key, value) {
   config[key] = value;
-  localStorage.speech_to_text_config = JSON.stringify(config);
+  _saveConfig();
 }
 
 function updateConfigClass(key, value_key, value) {
@@ -915,7 +924,7 @@ function updateConfigClass(key, value_key, value) {
     config[key] = {};
   }
   config[key][value_key] = value;
-  localStorage.speech_to_text_config = JSON.stringify(config);
+  _saveConfig();
 }
 
 function toggleClass(id, className) {

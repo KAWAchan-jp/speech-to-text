@@ -121,17 +121,23 @@ function updateGeminiSensitivity(slider) {
 // VAD（マイク送信状態）インジケータを更新する。
 // sending=true: 発話を検知してAPIに送信中（緑）、false: 無音でスキップ中（グレー）。
 // state省略時（停止時など）は待機表示に戻す。
+// DOM更新は250ms以内に来た連続呼び出しをスキップしてCPU負荷を抑える。
+var _vadThrottleTs = 0;
 function updateGeminiVadIndicator(sending, rms) {
   const el = document.getElementById('gemini_vad_indicator');
   if (!el) return;
   const label = el.querySelector('.gemini_vad_label');
   const fill = el.querySelector('.gemini_vad_meter_fill');
   if (sending === undefined) {
+    _vadThrottleTs = 0;
     el.classList.remove('sending', 'idle');
     if (label) label.textContent = '待機中';
     if (fill) fill.style.width = '0%';
     return;
   }
+  const now = Date.now();
+  if (now - _vadThrottleTs < 250) return;
+  _vadThrottleTs = now;
   el.classList.toggle('sending', sending);
   el.classList.toggle('idle', !sending);
   if (label) label.textContent = sending ? '送信中' : '無音';
@@ -559,7 +565,13 @@ function floatTo16BitPCM(floatSamples) {
 }
 
 function arrayBufferToBase64(buffer) {
-  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+  }
+  return btoa(binary);
 }
 
 function sendGeminiAudioChunk(samples) {
