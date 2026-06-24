@@ -1,7 +1,0 @@
-# Gemini Live 翻訳機能（実験的）のAPIキー設定ファイル。各自のローカル環境でのみ用意する。
-gemini-live-translate.config.js
-
-# 開発者向け内部ファイル（公開リポジトリに含めない）
-analysis.md
-CLAUDE.md
-.claude/
